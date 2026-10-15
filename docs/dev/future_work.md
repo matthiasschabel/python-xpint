@@ -85,6 +85,11 @@ equality, hashing, conversion, and pickling updated together.
   if dependency churn warrants it.
 - Test NumPy/runtime dependency floors explicitly before claiming a broader
   matrix. Existing local beta results use Pint 0.25.3 and NumPy 2.5.2.
+- Performance follow-ups from the pre-release audit, each to be profiled before
+  changing: explicit `ndarray` export with a dtype change and `copy=True` copies the
+  converted array a second time; `from_sequence` recomputes the first element's
+  semantic state for every comparison; designation signatures are recomputed
+  several times per operation, which matters for scalars and small arrays.
 - Benchmark actual workloads with the retained harnesses. Persistent staging
   buffers might save allocation but need shape/dtype/mask, nesting, concurrency,
   and ownership rules. Preserve transaction guarantees when optimizing.

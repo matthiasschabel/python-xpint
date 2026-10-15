@@ -809,6 +809,20 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 operator.add if op is operator.iadd else operator.sub,
             )
             if affine_result is not None:
+                computed = affine_result._magnitude
+                target = self._magnitude
+                if (
+                    np is not None
+                    and type(target) is np.ndarray
+                    and type(computed) is np.ndarray
+                    and computed.shape == target.shape
+                    and computed.dtype == target.dtype
+                    and target.flags.writeable
+                ):
+                    # The affine result is already a complete buffer independent of
+                    # the target, and an equal-dtype, equal-shape write cannot fail,
+                    # so it can be committed without staging a second copy.
+                    return self._commit_inplace_result(affine_result, computed)
                 candidate = self._inplace_candidate()
                 staged_magnitude = candidate._magnitude
                 if np is not None and isinstance(staged_magnitude, np.ndarray):

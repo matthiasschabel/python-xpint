@@ -95,7 +95,10 @@ about 1.35×. The cost is the classification checks and result construction.
 Staged in-place NumPy operations (powers, `ito()`, temperature-role addition and
 subtraction, classified multiplication and division) also copy the buffer so
 that a failure leaves values and metadata unchanged; that copy grows with array
-size and is deliberate.
+size and is deliberate. Temperature-role `+=` and `-=` commit their computed
+result directly when its shape and dtype match a writable destination, so they
+hold one temporary buffer rather than two (at 1M float64 elements: 0.81 ms
+versus 1.34 ms before, Pint 0.17 ms).
 
 ## Alternatives Considered
 

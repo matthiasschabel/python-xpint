@@ -467,6 +467,35 @@ def test_inplace_affine_casting_failure_keeps_values_and_semantics() -> None:
     assert left.affine_role is AffineRole.ABSOLUTE
 
 
+def test_inplace_affine_read_only_buffer_rejects_without_change() -> None:
+    original = np.array([20.0, 21.0])
+    original.flags.writeable = False
+    left = ureg.Quantity(original, degC)
+    with pytest.raises(ValueError, match="read-only"):
+        left += 5 * delta_degC
+    assert left.magnitude is original
+    np.testing.assert_array_equal(original, [20.0, 21.0])
+    assert left.affine_role is AffineRole.ABSOLUTE
+
+
+def test_inplace_affine_writes_through_strided_views() -> None:
+    base = np.zeros(6)
+    view = base[::2]
+    left = ureg.Quantity(view, degC)
+    left += ureg.Quantity(np.array([1.0, 2.0, 3.0]), delta_degC)
+    assert left.magnitude is view
+    np.testing.assert_array_equal(base, [1.0, 0.0, 2.0, 0.0, 3.0, 0.0])
+
+
+def test_inplace_affine_keeps_destination_dtype() -> None:
+    original = np.array([20.0, 21.0], dtype=np.float32)
+    left = ureg.Quantity(original, degC)
+    left += ureg.Quantity(np.array([1.0, 2.0], dtype=np.float64), delta_degC)
+    assert left.magnitude is original
+    assert original.dtype == np.float32
+    np.testing.assert_allclose(original, [21.0, 23.0], rtol=1e-6, atol=0.0)
+
+
 def test_absolute_hashes_match_after_conversion_to_kelvin() -> None:
     celsius = 20 * degC
     kelvin = (293.15 * K).as_kind("Temperature")
