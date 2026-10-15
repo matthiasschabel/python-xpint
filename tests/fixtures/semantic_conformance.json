@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "numeric_tolerance": {"relative": 1e-12, "absolute": 1e-12},
+  "cases": [
+    {
+      "id": "energy_addition",
+      "operation": "add",
+      "left": {"magnitude": 2, "unit": "joule", "kind": "Energy"},
+      "right": {"magnitude": 3, "unit": "joule", "kind": "Energy"},
+      "expected": {"magnitude": 5, "unit": "joule", "kind": "Energy", "role": null, "designations": []}
+    },
+    {
+      "id": "energy_torque_mismatch",
+      "operation": "add",
+      "left": {"magnitude": 2, "unit": "joule", "kind": "Energy"},
+      "right": {"magnitude": 3, "unit": "joule", "kind": "Torque"},
+      "expected_error": "semantic_mismatch"
+    },
+    {
+      "id": "kind_mismatch_with_unkinded",
+      "operation": "add",
+      "left": {"magnitude": 2, "unit": "joule"},
+      "right": {"magnitude": 3, "unit": "joule", "kind": "Energy"},
+      "expected_error": "semantic_mismatch"
+    },
+    {
+      "id": "kind_drop_on_product",
+      "operation": "multiply",
+      "left": {"magnitude": 2, "unit": "joule", "kind": "Energy"},
+      "right": {"magnitude": 3, "unit": "second"},
+      "expected": {"magnitude": 6, "unit": "joule * second", "kind": null, "role": null, "designations": []}
+    },
+    {
+      "id": "designation_mismatch",
+      "operation": "add",
+      "left": {"magnitude": 2, "unit": "mole", "designation": "O2"},
+      "right": {"magnitude": 3, "unit": "mole", "designation": "CO2"},
+      "expected_error": "semantic_mismatch"
+    },
+    {
+      "id": "designation_cancellation_with_scale",
+      "operation": "divide",
+      "left": {"magnitude": 2, "unit": "mole", "designation": "O2"},
+      "right": {"magnitude": 4, "unit": "millimole", "designation": "O2"},
+      "expected": {"magnitude": 500, "unit": "dimensionless", "kind": null, "role": null, "designations": []}
+    },
+    {
+      "id": "physically_dimensionless_retains_designations",
+      "operation": "divide",
+      "left": {"magnitude": 2, "unit": "milliliter", "designation": "blood"},
+      "right": {"magnitude": 4, "unit": "milliliter", "designation": "tissue"},
+      "expected": {"magnitude": 0.5, "unit": "dimensionless", "kind": null, "role": null, "designations": [["length", "blood", "3"], ["length", "tissue", "-3"]]}
+    },
+    {
+      "id": "absolute_subtraction",
+      "operation": "subtract",
+      "left": {"magnitude": 25, "unit": "degree_Celsius"},
+      "right": {"magnitude": 68, "unit": "degree_Fahrenheit"},
+      "expected": {"magnitude": 5, "unit": "delta_degree_Celsius", "kind": "TemperatureDifference", "role": "Delta", "designations": []}
+    },
+    {
+      "id": "absolute_plus_delta",
+      "operation": "add",
+      "left": {"magnitude": 20, "unit": "degree_Celsius"},
+      "right": {"magnitude": 5, "unit": "delta_degree_Celsius"},
+      "expected": {"magnitude": 25, "unit": "degree_Celsius", "kind": "Temperature", "role": "Absolute", "designations": []}
+    },
+    {
+      "id": "absolute_plus_absolute_rejected",
+      "operation": "add",
+      "left": {"magnitude": 20, "unit": "degree_Celsius"},
+      "right": {"magnitude": 25, "unit": "degree_Celsius"},
+      "expected_error": "semantic_mismatch"
+    },
+    {
+      "id": "generic_kelvin_addition",
+      "operation": "add",
+      "left": {"magnitude": 2, "unit": "kelvin"},
+      "right": {"magnitude": 3, "unit": "kelvin"},
+      "expected": {"magnitude": 5, "unit": "kelvin", "kind": null, "role": "Generic", "designations": []}
+    }
+  ]
+}

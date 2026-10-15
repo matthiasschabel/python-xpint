@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<title>xpint Semantic Quantities</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&amp;display=swap">
+
+<style>
+  :root {
+    --paper:      #EBEEF0;
+    --surface:    #F7F8F9;
+    --surface-2:  #E2E6E9;
+    --ink:        #14181D;
+    --ink-mid:    #414B55;
+    --ink-soft:   #66727D;
+    --rule:       #CDD4D9;
+    --rule-soft:  #DDE2E6;
+    --accent:     #A81E3C;
+    --accent-mid: #C33A57;
+    --accent-wash:#F6E3E7;
+    --warn:       #8A5A00;
+    --warn-wash:  #F6EAD3;
+    --ok:         #0F6E62;
+    --ok-wash:    #DCECE9;
+
+    --col: 74ch;
+    --f-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --f-mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0E1216;
+      --surface:    #161B21;
+      --surface-2:  #1E242B;
+      --ink:        #E3E8EC;
+      --ink-mid:    #AEB8C1;
+      --ink-soft:   #808B95;
+      --rule:       #29313A;
+      --rule-soft:  #1F262D;
+      --accent:     #EE6F87;
+      --accent-mid: #D9536D;
+      --accent-wash:#2C1820;
+      --warn:       #D6A24A;
+      --warn-wash:  #2A2214;
+      --ok:         #55C4AF;
+      --ok-wash:    #12261F;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0E1216;
+    --surface:    #161B21;
+    --surface-2:  #1E242B;
+    --ink:        #E3E8EC;
+    --ink-mid:    #AEB8C1;
+    --ink-soft:   #808B95;
+    --rule:       #29313A;
+    --rule-soft:  #1F262D;
+    --accent:     #EE6F87;
+    --accent-mid: #D9536D;
+    --accent-wash:#2C1820;
+    --warn:       #D6A24A;
+    --warn-wash:  #2A2214;
+    --ok:         #55C4AF;
+    --ok-wash:    #12261F;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: clamp(16.5px, 0.45vw + 14px, 19px);
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 clamp(18px, 5vw, 56px) 96px;
+  }
+
+  /* ---- masthead ------------------------------------------------------ */
+
+  .masthead {
+    display: grid;
+    gap: 26px;
+    padding: clamp(56px, 9vw, 104px) 0 clamp(38px, 5vw, 54px);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .wordmark {
+    font-family: var(--f-mono);
+    font-weight: 600;
+    font-size: clamp(54px, 11vw, 108px);
+    letter-spacing: -0.05em;
+    line-height: 0.95;
+    margin: 0;
+  }
+  .wordmark .brk { color: var(--accent); }
+  .wordmark .x { color: var(--accent); }
+
+  .lede {
+    font-family: var(--f-display);
+    font-size: clamp(21px, 2.6vw, 29px);
+    line-height: 1.34;
+    font-weight: 400;
+    max-width: 22ch;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede em { font-style: italic; color: var(--accent); }
+
+  .masthead-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: clamp(28px, 5vw, 64px);
+    align-items: end;
+  }
+  @media (max-width: 760px) { .masthead-grid { grid-template-columns: 1fr; align-items: start; } }
+
+  .standfirst {
+    color: var(--ink-mid);
+    max-width: 52ch;
+    margin: 0;
+    font-size: 16px;
+  }
+  .standfirst + .standfirst { margin-top: 14px; }
+
+  .statusbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-top: 22px;
+  }
+  .tag {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    background: var(--surface);
+  }
+  .tag.alert { color: var(--warn); border-color: var(--warn); background: var(--warn-wash); }
+
+  /* ---- sections ------------------------------------------------------ */
+
+  section { padding-top: clamp(52px, 7vw, 82px); }
+
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  .eyebrow .dim { color: var(--ink-soft); }
+
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(27px, 3.6vw, 39px);
+    line-height: 1.16;
+    letter-spacing: -0.012em;
+    margin: 0 0 18px;
+    max-width: 30ch;
+    text-wrap: balance;
+  }
+
+  h3, h4 {
+    font-family: var(--f-body);
+    font-weight: 600;
+    font-size: 17.5px;
+    letter-spacing: -0.006em;
+    margin: 0 0 8px;
+  }
+  h4 { font-size: 16.5px; }
+
+  p { max-width: var(--col); margin: 0 0 16px; }
+  p:last-child { margin-bottom: 0; }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2.5px; }
+  a:focus-visible, .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  code {
+    font-family: var(--f-mono);
+    font-size: 0.88em;
+    background: var(--surface-2);
+    padding: 1px 4px;
+    color: var(--ink);
+  }
+  .d { color: var(--accent); }
+
+  .note {
+    font-size: 14px;
+    color: var(--ink-soft);
+    max-width: var(--col);
+  }
+
+  /* ---- the pair: the page's structural spine ------------------------- */
+
+  .case { padding-top: clamp(34px, 4vw, 46px); }
+  .case-head { max-width: var(--col); margin-bottom: 16px; }
+  .case-head p { margin-bottom: 0; color: var(--ink-mid); font-size: 15.5px; }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (max-width: 800px) { .pair { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .panel-label {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--rule-soft);
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .panel.them .panel-label { background: var(--surface-2); }
+  .panel.us .panel-label { background: var(--accent-wash); color: var(--accent); }
+  .panel-label .verdict { font-size: 10.5px; letter-spacing: 0.08em; }
+
+  pre {
+    font-family: var(--f-mono);
+    font-size: 13.2px;
+    line-height: 1.72;
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    tab-size: 4;
+    flex: 1;
+  }
+  pre .cm { color: var(--ink-soft); }
+  pre .out { color: var(--ok); }
+  pre .err { color: var(--warn); }
+  pre .kw { color: var(--accent-mid); }
+
+  .outcome {
+    border-top: 1px solid var(--rule-soft);
+    padding: 11px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-mid);
+    background: var(--surface);
+  }
+  .outcome b { color: var(--ink); font-weight: 600; }
+  .panel.them .outcome { box-shadow: inset 3px 0 0 var(--warn); }
+  .panel.us .outcome { box-shadow: inset 3px 0 0 var(--ok); }
+
+  /* ---- single code block --------------------------------------------- */
+
+  .block {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    margin: 0 0 20px;
+  }
+  .block .panel-label { border-bottom: 1px solid var(--rule-soft); background: var(--surface-2); }
+
+  /* ---- ownership table ----------------------------------------------- */
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  thead th {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 500;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.owner-pint { color: var(--ink-mid); }
+  td.owner-xpint { color: var(--accent); font-weight: 500; }
+  .bench td.hi { color: var(--ok); font-weight: 500; }
+
+  /* ---- precedence chain: a real sequence, so it's numbered ----------- */
+
+  .chain { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .gate {
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 46px minmax(0, 190px) minmax(0, 1fr);
+    gap: 0 18px;
+    padding: 14px 16px;
+    align-items: baseline;
+  }
+  @media (max-width: 680px) { .gate { grid-template-columns: 34px minmax(0, 1fr); } .gate .gate-why { grid-column: 2; } }
+  .gate-n {
+    font-family: var(--f-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .gate-name { font-family: var(--f-mono); font-size: 14px; font-weight: 500; }
+  .gate-why { color: var(--ink-mid); font-size: 14.5px; }
+
+  /* ---- misc ---------------------------------------------------------- */
+
+  ul.plain { max-width: var(--col); padding-left: 1.15em; margin: 0 0 16px; }
+  ul.plain li { margin-bottom: 7px; }
+  ul.plain li::marker { color: var(--accent); }
+
+  .rule { border: 0; border-top: 1px solid var(--rule); margin: 0; }
+
+  .technical-details {
+    margin-top: 30px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .technical-details summary {
+    cursor: pointer;
+    padding: 14px 16px;
+    font-weight: 600;
+    color: var(--ink);
+    background: var(--surface-2);
+  }
+  .technical-details summary::marker { color: var(--accent); }
+  .technical-details[open] summary { border-bottom: 1px solid var(--rule); }
+  .technical-details-content { padding: 4px 16px 24px; }
+  .technical-details-content h3 { margin-top: 30px; }
+
+  footer {
+    margin-top: clamp(56px, 8vw, 90px);
+    padding-top: 26px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-size: 13.5px;
+  }
+  footer p { max-width: none; }
+  footer .colophon { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 18px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1 class="wordmark"><span class="brk">[</span><span class="x">x</span><span class="brk">]</span>pint</h1>
+    <div class="masthead-grid">
+      <div>
+          <p class="lede"><span class="d">Extended</span> validation for dimensional quantities.</p>
+      </div>
+      <div>
+        <p class="standfirst"><strong>xpint</strong> extends <a href="https://pint.readthedocs.io/">Pint</a> with semantic metadata that ordinary dimensionality does not represent: quantity kinds, factor-level designations, and affine roles for thermodynamic temperature.</p>
+        <p class="standfirst">With the default registry, Pint continues to define ordinary dimensions, unit conversion, contexts, formatting, and NumPy behavior. The optional <code>angle_dimension=True</code> registry deliberately gives plane angle a dimension and is not interchangeable with a default registry.</p>
+        <div class="statusbar">
+          <span class="tag alert">0.1.0b1 &middot; public beta</span>
+          <span class="tag">Python 3.12+</span>
+          <span class="tag">Pint &ge;0.25.3, &lt;0.26</span>
+          <span class="tag">BSD 3-Clause</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= OBJECTIVE ================= -->
+  <section>
+    <p class="eyebrow">Objective</p>
+    <h2>Semantic distinctions beyond dimensionality</h2>
+    <p>Dimensional analysis determines whether quantities are physically commensurable. It cannot represent every distinction an application may need to enforce when equal-dimensional values have different meanings.</p>
+    <p>xpint addresses four such distinctions:</p>
+
+    <div class="tablewrap" style="margin-top: 22px;">
+      <table>
+        <thead>
+          <tr><th>Expression</th><th>Dimensionality</th><th>Semantics</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">joule + newton metre</td>
+            <td class="owner-pint">Identical</td>
+            <td>Distinct kinds: energy and torque</td>
+          </tr>
+          <tr>
+            <td class="num">mmol<span class="d">[O2]</span>/L + mmol<span class="d">[NaCl]</span>/L</td>
+            <td class="owner-pint">Identical</td>
+            <td>Distinct designations: oxygen and sodium chloride</td>
+          </tr>
+          <tr>
+            <td class="num">mL<span class="d">[plasma]</span> / mL<span class="d">[whole_blood]</span></td>
+            <td class="owner-pint">Dimensionless</td>
+            <td>Retained compartment identity after dimensional cancellation</td>
+          </tr>
+          <tr>
+            <td class="num">10 K</td>
+            <td class="owner-pint">Temperature</td>
+            <td>Absolute, difference, or unspecified affine role</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 22px;">xpint stores these distinctions with the value and validates them before an operation can discard them. An undesignated, unkinded, non-affine quantity follows Pint's ordinary behavior.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Terminology <span class="dim">/ xpint specific terms</span></p>
+    <!--<h2>Terminology</h2>-->
+    <!--<p>Definitions for xpint-specific terms.</p>-->
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Term</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num"><b>Kind</b></td>
+            <td>What a quantity <em>is</em>. A named meaning that separates values sharing a dimension, so energy and torque stop being interchangeable. A kind constrains which operations are allowed; it never changes how a conversion is computed.</td>
+          </tr>
+          <tr>
+            <td class="num"><b>Designation</b></td>
+            <td>What a quantity is <em>of</em>. A substance or compartment label carried inside the unit, so millimoles of oxygen and millimoles of salt have different unit identities. Matching labels cancel; differing labels remain.</td>
+          </tr>
+          <tr>
+            <td class="num"><b>Classified value</b></td>
+            <td>A quantity carrying any of that added metadata: a kind, a designation, or an absolute or delta temperature unit. The word the error messages use. Everything else is an ordinary value and behaves exactly as it does in Pint.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ================= ADDITIVE ================= -->
+  <section>
+    <p class="eyebrow">Architecture <span class="dim">/ Pint integration</span></p>
+    <h2>Relationship to Pint</h2>
+    <p>xpint extends rather than patches Pint. <code>SemanticQuantity</code> subclasses the quantity class bound to its registry, and <code>SemanticRegistry</code> subclasses Pint's <code>GenericUnitRegistry</code>. Importing xpint does not replace Pint's process-wide application registry.</p>
+    <p>Responsibility is divided as follows:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Concern</th><th>Owner</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Unit definitions, prefixes, parsing</td><td class="owner-pint">Pint</td><td>xpint adds a curated short-symbol module bound to one registry</td></tr>
+          <tr><td>Dimensional reduction &amp; commensurability</td><td class="owner-pint">Pint</td><td>Unmodified; it gates everything else</td></tr>
+          <tr><td>Scale and offset conversion</td><td class="owner-pint">Pint</td><td>xpint decides <em>whether</em> a conversion is meaningful, never how to compute it</td></tr>
+          <tr><td>Contexts, formatting, NumPy protocol</td><td class="owner-pint">Pint</td><td>Delegated for ordinary values</td></tr>
+          <tr><td>Quantity kinds</td><td class="owner-xpint">xpint</td><td>Dimension-constrained; <code>as_kind</code> / <code>as_unkinded</code> / <code>has_kind</code></td></tr>
+          <tr><td>Factor-level designations</td><td class="owner-xpint">xpint</td><td>Part of unit identity and cancellation, not a display label</td></tr>
+          <tr><td>Affine roles</td><td class="owner-xpint">xpint</td><td>Absolute / Delta / Generic, thermodynamic temperature only in v0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 22px;">xpint adds explicit classification helpers and guards inherited operations. An undesignated, unkinded, non-affine quantity delegates ordinary operations to Pint; classified values add validation at operations where their metadata is relevant.</p>
+
+    <h3 style="margin-top: 26px;">Deliberate behavioral differences</h3>
+    <p>Classified quantities differ from stock Pint in a bounded set of operations where Pint does not model xpint metadata:</p>
+    <ul class="plain">
+      <li>Implicit <code>ndarray</code> downcast of a <em>classified</em> value raises, where Pint emits <code>UnitStrippedWarning</code> and returns bare magnitudes. Unclassified values keep Pint's behaviour.</li>
+      <li>Supported reductions validate and convert quantity-valued <code>initial=</code> inputs. Unsupported <code>out=</code> targets reject before a unit-blind write; support is specific to each operation.</li>
+      <li>Operations mixing quantities from two registries are rejected explicitly.</li>
+      <li>Affine construction goes the other way: xpint <em>permits</em> <code>20 * degC</code>, which a default Pint registry refuses as an ambiguous offset operation, because the role makes the multiplication unambiguous. Absolute/Delta arithmetic follows explicit role rules, and the Generic role prevents unmarked kelvin from being silently treated as a point or a difference.</li>
+    </ul>
+    <p class="note">The initial compatibility surface is deliberately bounded. Pandas, arbitrary Dask graph transformations, and designated pint-xarray round trips are not yet supported. Tested classified paths reject undefined propagation; untested integrations have no preservation guarantee.</p>
+  </section>
+
+  <!-- ================= EXAMPLES ================= -->
+  <section>
+    <p class="eyebrow">Worked cases <span class="dim">/ public API boundaries</span></p>
+    <h2>Examples of semantic validation</h2>
+    <p>Each example shows an application boundary where ordinary dimensional compatibility is insufficient. The representative outputs were verified against Pint 0.25.3 and the current xpint implementation.</p>
+
+    <!-- CASE 1 -->
+    <div class="case">
+      <div class="case-head">
+        <h3>1 &nbsp;&middot;&nbsp; Validate meaning as well as dimension</h3>
+        <p>A joule and a newton-metre reduce to the same base dimensions. A function that accepts an energy contribution cannot identify an accidentally supplied torque value from units alone.</p>
+      </div>
+      <div class="pair">
+        <div class="panel them">
+          <div class="panel-label"><span>Pint</span><span class="verdict">dimensionally compatible</span></div>
+<pre><span class="kw">def</span> update_energy_budget(total, contribution):
+    <span class="kw">return</span> total + contribution.to(total.units)
+
+stored_energy = 10 * u.joule
+motor_torque  = 10 * u.newton * u.meter
+
+update_energy_budget(stored_energy, motor_torque)
+<span class="out">&gt;&gt;&gt; 20.0 joule</span></pre>
+          <div class="outcome">The units are convertible, so dimensional validation accepts the argument.</div>
+        </div>
+        <div class="panel us">
+          <div class="panel-label"><span>xpint</span><span class="verdict">rejects</span></div>
+<pre><span class="kw">from</span> xpint.units <span class="kw">import</span> J, N, m
+
+<span class="kw">def</span> update_energy_budget(total, contribution):
+    <span class="kw">return</span> total + contribution.to(total.units)
+
+stored_energy = (10 * J).as_kind(<span class="d">"Energy"</span>)
+motor_torque  = (10 * N * m).as_kind(<span class="d">"Torque"</span>)
+
+update_energy_budget(stored_energy, motor_torque)
+<span class="err">&gt;&gt;&gt; TypeError: cannot add quantity kinds
+    'Energy' and 'Torque'; use as_kind() or
+    as_unkinded() to make the kinds match.</span>
+
+stored_energy + (2 * J).as_kind(<span class="d">"Energy"</span>)
+<span class="out">&gt;&gt;&gt; 12 joule</span></pre>
+          <div class="outcome">The function rejects the incorrect semantic kind. An unkinded contribution is rejected too; classify it with <code>as_kind()</code> or drop the kind with <code>as_unkinded()</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 26px;">The default registry currently contains ten groups in which multiple built-in kinds share one dimensionality. The following table shows six representative groups. Some become dimensionally distinct when <code>angle_dimension=True</code>.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Shared dimension</th><th>Built-in kinds</th><th>Distinction not represented</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">J<br><span style="color:var(--ink-soft)">N&middot;m</span></td>
+            <td class="num owner-xpint">Energy<br>Torque</td>
+            <td>Energy and a moment about an axis.</td>
+          </tr>
+          <tr>
+            <td class="num">s&#8315;&sup1;<br><span style="color:var(--ink-soft)">Hz, Bq, rad/s</span></td>
+            <td class="num owner-xpint">Frequency<br>Radioactivity<br>AngularVelocity</td>
+            <td>Repetition rate, decay rate, and angular velocity.</td>
+          </tr>
+          <tr>
+            <td class="num">J/kg<br><span style="color:var(--ink-soft)">Gy, Sv</span></td>
+            <td class="num owner-xpint">AbsorbedDose<br>EquivalentDose</td>
+            <td>Absorbed energy per mass and the corresponding biologically weighted dose.</td>
+          </tr>
+          <tr>
+            <td class="num">dimensionless<br><span style="color:var(--ink-soft)">rad, sr</span></td>
+            <td class="num owner-xpint">PlaneAngle<br>SolidAngle<br>Dimensionless</td>
+            <td>Plane angle, solid angle, and an undesignated scalar ratio.</td>
+          </tr>
+          <tr>
+            <td class="num">cd<br><span style="color:var(--ink-soft)">lm</span></td>
+            <td class="num owner-xpint">LuminousFlux<br>LuminousIntensity</td>
+            <td>Luminous flux and luminous intensity, separated by a dimensionless steradian.</td>
+          </tr>
+          <tr>
+            <td class="num">K</td>
+            <td class="num owner-xpint">Temperature<br>TemperatureDifference</td>
+            <td>A point on a scale against an interval. This group also drives the affine roles in case 4.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 18px;">SI already assigns separate names to gray and sievert, and to hertz and becquerel, despite each pair sharing a dimension. Kinds make comparable distinctions available to programmatic validation.</p>
+
+
+    <!-- CASE 2 -->
+    <div class="case">
+      <div class="case-head">
+        <h3>2 &nbsp;&middot;&nbsp; Validate the designated substance</h3>
+        <p>A laboratory interface may require oxygen concentration specifically. Both oxygen and sodium-chloride concentrations have units of <code>mmol/L</code>, so the analyte must be represented separately from dimensionality.</p>
+      </div>
+      <div class="pair">
+        <div class="panel them">
+          <div class="panel-label"><span>Pint</span><span class="verdict">same unit</span></div>
+<pre>oxygen_units = u.mmol / u.L
+
+<span class="kw">def</span> normalize_oxygen(value):
+    <span class="kw">return</span> value.to(oxygen_units)
+
+salt = 5 * u.mmol / u.L
+normalize_oxygen(salt)
+<span class="out">&gt;&gt;&gt; 5.0 millimole / liter</span></pre>
+          <div class="outcome">The unit records concentration but not the analyte, so the argument satisfies the dimensional contract.</div>
+        </div>
+        <div class="panel us">
+          <div class="panel-label"><span>xpint</span><span class="verdict">rejects</span></div>
+<pre><span class="kw">from</span> xpint.units <span class="kw">import</span> L, mM, mmol
+
+oxygen_units = mmol[<span class="d">"O2"</span>] / L
+
+<span class="kw">def</span> normalize_oxygen(value):
+    <span class="kw">if not</span> value.is_compatible_with(oxygen_units):
+        <span class="kw">raise</span> ValueError(<span class="d">"expected O2 concentration"</span>)
+    <span class="kw">return</span> value.to(oxygen_units)
+
+salt = 5 * mM[<span class="d">"NaCl"</span>]
+normalize_oxygen(salt)
+<span class="err">&gt;&gt;&gt; ValueError: expected O2 concentration</span></pre>
+          <div class="outcome">The designation makes the analyte available to validation. Application policy still decides whether and how different analytes may be combined.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE 3 -->
+    <div class="case">
+      <div class="case-head">
+        <h3>3 &nbsp;&middot;&nbsp; Retain identity after dimensional cancellation</h3>
+        <p>Partition ratios, haematocrit, extraction fractions, and volume fractions may be physically dimensionless while retaining the identities of their numerator and denominator.</p>
+      </div>
+      <div class="pair">
+        <div class="panel them">
+          <div class="panel-label"><span>Pint</span><span class="verdict">designation unavailable</span></div>
+<pre>ratio = (0.6 * u.mL) / (1 * u.mL)
+
+ratio
+<span class="out">&gt;&gt;&gt; 0.6 dimensionless</span>
+
+float(ratio)
+<span class="out">&gt;&gt;&gt; 0.6</span>
+
+<span class="cm"># no compartment metadata remains</span></pre>
+          <div class="outcome">Dimensional cancellation produces an ordinary scalar; the compartment identity is not represented.</div>
+        </div>
+        <div class="panel us">
+          <div class="panel-label"><span>xpint</span><span class="verdict">retains</span></div>
+<pre>ratio = (0.6 * mL[<span class="d">"plasma"</span>]) \
+      / (1 * mL[<span class="d">"whole_blood"</span>])
+
+ratio
+<span class="out">&gt;&gt;&gt; 0.6 milliliter[plasma]
+        / milliliter[whole_blood]</span>
+
+ratio.dimensionless      <span class="out">&gt;&gt;&gt; True</span>
+ratio.has_designation    <span class="out">&gt;&gt;&gt; True</span>
+ratio.is_semantic_unity  <span class="out">&gt;&gt;&gt; False</span>
+
+float(ratio)
+<span class="err">&gt;&gt;&gt; TypeError: cannot coerce a quantity
+    with retained factor designations &hellip;</span></pre>
+          <div class="outcome"><code>dimensionless</code> reports physical dimensionality. <code>is_semantic_unity</code> additionally requires the absence of retained designations before a scalar-only API accepts the value. Removing designations is explicit through <code>as_undesignated()</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE 4 -->
+    <div class="case">
+      <div class="case-head">
+        <h3>4 &nbsp;&middot;&nbsp; Kelvin does not encode an affine role</h3>
+        <p>Pint distinguishes absolute and delta offset units: Celsius plus a delta is valid, Celsius minus Celsius yields a delta, and Celsius plus Celsius is rejected. A kelvin value has no corresponding unit-level marker, so its role depends on the conversion target.</p>
+      </div>
+      <div class="pair">
+        <div class="panel them">
+          <div class="panel-label"><span>Pint</span><span class="verdict">kelvin is unmarked</span></div>
+<pre>Q = u.Quantity
+<span class="cm"># offset roles are modelled, and work:</span>
+Q(20, <span class="d">"degC"</span>) + Q(5, <span class="d">"delta_degC"</span>)
+<span class="out">&gt;&gt;&gt; 25 degree_Celsius</span>
+Q(20, <span class="d">"degC"</span>) + Q(20, <span class="d">"degC"</span>)
+<span class="err">&gt;&gt;&gt; OffsetUnitCalculusError</span>
+
+<span class="cm"># but kelvin has no role, so one value
+# reads either way &mdash; the target decides,
+# and neither reading complains:</span>
+
+Q(293.15, <span class="d">"K"</span>).to(<span class="d">"degC"</span>)
+<span class="out">&gt;&gt;&gt; 20.0 degree_Celsius</span>       <span class="cm"># a point</span>
+Q(5, <span class="d">"K"</span>).to(<span class="d">"delta_degC"</span>)
+<span class="out">&gt;&gt;&gt; 5.0 delta_degree_Celsius</span>  <span class="cm"># an interval</span>
+
+20 * u.degC   <span class="cm"># construction by &times;</span>
+<span class="err">&gt;&gt;&gt; OffsetUnitCalculusError</span></pre>
+          <div class="outcome">Offset-unit arithmetic distinguishes points and intervals, but an unmarked kelvin value can satisfy either conversion target.</div>
+        </div>
+        <div class="panel us">
+          <div class="panel-label"><span>xpint</span><span class="verdict">explicit affine role</span></div>
+<pre><span class="kw">def</span> temperature_in_celsius(value):
+    <span class="kw">return</span> value.to(degC)
+
+room    = 20 * degC        <span class="cm"># Absolute</span>
+warming = 5 * delta_degC   <span class="cm"># Delta</span>
+
+room + warming
+<span class="out">&gt;&gt;&gt; 25 degree_Celsius   (Absolute)</span>
+
+room + room
+<span class="err">&gt;&gt;&gt; TypeError: cannot add two absolute
+    temperatures; shift an absolute temperature
+    with a temperature difference instead.</span>
+
+temperature_in_celsius(293.15 * K)
+<span class="err">&gt;&gt;&gt; TypeError: cannot convert Generic
+    Kelvin to an absolute or delta scale;
+    classify it with as_kind() first.</span>
+
+temperature_in_celsius(
+    (293.15 * K).as_kind(<span class="d">"Temperature"</span>)
+)
+<span class="out">&gt;&gt;&gt; 20.0 degree_Celsius</span></pre>
+          <div class="outcome">Bare kelvin remains Generic until the caller classifies it as an absolute temperature or a temperature difference. The function can therefore enforce its affine contract.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRECEDENCE ================= -->
+  <section>
+    <p class="eyebrow">Evaluation order</p>
+    <h2>Four gates, in a fixed sequence</h2>
+    <p>The concerns are distinct but not independent, so their evaluation order is part of the contract. Each check runs only after the preceding condition has passed.</p>
+
+    <div class="chain">
+      <div class="gate">
+        <div class="gate-n">01</div>
+        <div class="gate-name">Dimension</div>
+        <div class="gate-why">Pint decides whether the operation is physically possible at all.</div>
+      </div>
+      <div class="gate">
+        <div class="gate-n">02</div>
+        <div class="gate-name">Designation</div>
+        <div class="gate-why">Partitions the dimension map by substance or compartment. Matching labels cancel; differing ones remain in the signature even when the units cancel.</div>
+      </div>
+      <div class="gate">
+        <div class="gate-n">03</div>
+        <div class="gate-name">Affine role</div>
+        <div class="gate-why">For thermodynamic temperature, derived from the unit token and any kind. Evaluated <em>before</em> kind absorption.</div>
+      </div>
+      <div class="gate">
+        <div class="gate-n">04</div>
+        <div class="gate-name">Kind</div>
+        <div class="gate-why">Constrains the meaning-sensitive operations that remain valid. Stored kinds must match; an unkinded operand is not absorbed into a kinded one.</div>
+      </div>
+    </div>
+
+    <p style="margin-top: 20px;">The ordering is observable. <code>20 degC + 5 K</code> is rejected with an affine-role error rather than a kind error, because the Generic role of bare Kelvin fails at gate 3 before gate 4 is reached.</p>
+  </section>
+
+  <!-- ================= PERFORMANCE ================= -->
+  <section>
+    <p class="eyebrow">Performance</p>
+    <h2>Performance and failure safety</h2>
+    <p>xpint validates metadata per supported array operation rather than per element. Small operations pay for dispatch and semantic checks; larger out-of-place operations spend more time in the array kernel. Benchmark the operations and array sizes your application actually uses.</p>
+    <h3 style="margin-top: 26px;">In-place operations have a different cost</h3>
+    <p>NumPy in-place powers and unit conversions stage a temporary buffer so a failed operation leaves values, units, and metadata intact while preserving caller aliases. Classified multiplication and division also stage the resulting semantic state. This adds full-array copying and one full-size buffer; automatic reduction can require another buffer. Other duck-array backends retain Pint's mutation behavior.</p>
+    <p style="margin-top: 20px;">Vectorized arithmetic avoids repeated Python-call overhead, but it does not eliminate staging costs. Correctness checks and transaction guarantees are retained even where a prior implementation was faster.</p>
+    <p class="note" style="margin-top: 22px;">Use <code>uv run python benchmarks/benchmark_pint_passthrough.py</code> for ordinary arithmetic and <code>uv run python benchmarks/benchmark_semantic_safety.py --backend xpint</code> for the broader timing/allocation matrix. Compare with <code>--backend pint</code> using fresh processes and recorded dependency versions. Historical prototype timings are not current beta performance guarantees.</p>
+  </section>
+
+  <!-- ================= ANGLE DIMENSIONS ================= -->
+  <section>
+    <p class="eyebrow">Optional angle dimensions <span class="dim">/ opt-in, off by default</span></p>
+    <h2>Optional dimensional treatment of plane angle</h2>
+    <p>SI classifies the radian and steradian as dimensionless derived units. Consequently, ordinary dimensional analysis cannot distinguish angular velocity from cyclic frequency, torque from energy, or a solid angle from a plain ratio. xpint can instead give plane angle a base dimension, with steradian derived as <code>rad&sup2;</code>:</p>
+
+    <div class="block">
+      <div class="panel-label"><span>Opt in</span><span class="verdict">construction time only</span></div>
+<pre><span class="kw">from</span> xpint <span class="kw">import</span> SemanticRegistry
+
+u = SemanticRegistry(<span class="d">angle_dimension</span>=<span class="kw">True</span>)
+
+u.get_dimensionality(<span class="d">"radian"</span>)      <span class="out">&gt;&gt;&gt; [angle]</span>
+u.get_dimensionality(<span class="d">"steradian"</span>)   <span class="out">&gt;&gt;&gt; [angle] ** 2</span></pre>
+    </div>
+
+    <p>A default <code>SemanticRegistry()</code> retains Pint's dimensional treatment. The option is fixed when the registry is constructed because Pint caches dimensionality, and quantities from the two registry modes cannot be combined. There is no global switch or runtime toggle.</p>
+
+    <h3 style="margin-top: 30px;">Gyromagnetic-ratio input normalization</h3>
+    <p>Gyromagnetic ratios are commonly supplied in angular units such as rad&middot;s&#8315;&sup1;&middot;T&#8315;&sup1; or cyclic-frequency units such as MHz&middot;T&#8315;&sup1;. A function accepting either convention must identify the input before normalizing it:</p>
+
+    <div class="block">
+      <div class="panel-label"><span>Normalize to cyclic frequency</span><span class="verdict">runnable example</span></div>
+<pre><span class="kw">def</span> larmor_frequency(registry, gamma, magnetic_flux_density):
+    <span class="cm">"""Return the cyclic Larmor frequency in megahertz."""</span>
+    angular_units = registry.radian / registry.second / registry.tesla
+    cyclic_units = registry.hertz / registry.tesla
+
+    <span class="kw">if</span> gamma.is_compatible_with(angular_units):
+        <span class="kw">return</span> (gamma * magnetic_flux_density / registry.turn).to(
+            registry.megahertz
+        )
+    <span class="kw">if</span> gamma.is_compatible_with(cyclic_units):
+        <span class="kw">return</span> (gamma * magnetic_flux_density).to(registry.megahertz)
+    <span class="kw">raise</span> ValueError(<span class="d">"unsupported gyromagnetic-ratio units"</span>)</pre>
+    </div>
+
+    <div class="pair">
+      <div class="panel them">
+        <div class="panel-label"><span>Default registry</span><span class="verdict">cannot distinguish</span></div>
+<pre>plain = SemanticRegistry()
+B0 = 3 * plain.tesla
+gamma_cyclic = 42.577478461 \
+    * plain.megahertz / plain.tesla
+
+gamma_cyclic.is_compatible_with(
+    plain.radian / plain.second / plain.tesla
+)
+<span class="out">&gt;&gt;&gt; True</span>
+
+larmor_frequency(plain, gamma_cyclic, B0)
+<span class="err">&gt;&gt;&gt; 20.329248484 megahertz</span></pre>
+        <div class="outcome">Both conventions have the same dimensionality, so the cyclic input enters the angular branch and is divided by one turn a second time.</div>
+      </div>
+      <div class="panel us">
+        <div class="panel-label"><span>Angle registry</span><span class="verdict">dispatches by dimension</span></div>
+<pre>B0 = 3 * u.tesla
+gamma_angular = 2.6752218708e8 \
+    * u.radian / u.second / u.tesla
+gamma_cyclic = 42.577478461 \
+    * u.megahertz / u.tesla
+
+larmor_frequency(u, gamma_angular, B0)
+<span class="out">&gt;&gt;&gt; 127.732435382 megahertz</span>
+larmor_frequency(u, gamma_cyclic, B0)
+<span class="out">&gt;&gt;&gt; 127.732435383 megahertz</span></pre>
+        <div class="outcome">Angular and cyclic units occupy different dimensions, so each input follows the intended normalization path.</div>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top: 20px;">The registry does not infer which convention a source intended. CODATA publishes the angular value as s&#8315;&sup1;&middot;T&#8315;&sup1;, without <code>rad</code>. The caller must annotate it as rad&middot;s&#8315;&sup1;&middot;T&#8315;&sup1;; the angle registry makes that annotation enforceable rather than decorative. This example is executed by <code>examples/angle_dimensions.py</code>.</p>
+
+    <h3 style="margin-top: 30px;">Trigonometric input validation</h3>
+    <p>Giving angle a dimension also gives trigonometric functions an explicit domain. Plane angles remain valid, while dimensionless values and solid angles are rejected:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Expression</th><th>Default registry</th><th><code>angle_dimension=True</code></th></tr></thead>
+        <tbody>
+          <tr><td class="num">np.sin(90 * degree)</td><td class="num">1.0 dimensionless</td><td class="num owner-xpint">1.0 dimensionless</td></tr>
+          <tr><td class="num">np.sin(0.1 * dimensionless)</td><td class="num">0.0998334 dimensionless</td><td class="num" style="color:var(--warn)">DimensionalityError</td></tr>
+          <tr><td class="num">np.sin(1 * steradian)</td><td class="num">0.841471 dimensionless</td><td class="num" style="color:var(--warn)">DimensionalityError</td></tr>
+          <tr><td class="num">np.arcsin(0.5 * dimensionless)</td><td class="num">0.5236 radian</td><td class="num owner-xpint">0.5236 radian</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 20px;">Angle-explicit equations use <code>&eta; = 1 / radian</code> where an angular quantity must become dimensionless or combine with length. For example, phase is <code>&eta;&omega;t</code> and tangential speed is <code>&eta;&omega;r</code>. The background below records the mathematical convention, its consequences, and its limitations.</p>
+
+    <details class="technical-details">
+      <summary>Standards and mathematical background</summary>
+      <div class="technical-details-content">
+
+    <h3>Standards context and design choice</h3>
+    <p>The SI treatment of angle has changed over time. From 1960, the radian and steradian occupied a third class of <em>supplementary units</em>, neither base nor derived. Resolution 8 of the 20th CGPM (1995) abolished that class and interpreted them as dimensionless derived units. The Consultative Committee for Units established another working group on the question in 2013 and reported no consensus in 2021.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Option</th><th>Position</th><th>Consequence</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="num">rad &equiv; 1</td>
+            <td>Status quo, and the CCU majority view in 2021. Every textbook equation holds verbatim.</td>
+            <td>Torque and energy, &omega; and f, Gy and Sv, and lm and cd share dimensions.</td>
+          </tr>
+          <tr>
+            <td class="num">radius in m/rad</td>
+            <td>Considered and abandoned.</td>
+            <td>Breaks &pi;r&sup2; for the area of a circle.</td>
+          </tr>
+          <tr>
+            <td class="num owner-xpint">[angle] with &eta;</td>
+            <td>Mohr and Phillips at NIST, Quincey at NPL, Leonard, Kalinin. What this switch implements.</td>
+            <td>&eta; enters the kinematic relations, and some familiar equations acquire it.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 20px;">In the angle-explicit formulation, the present SI treatment corresponds to the convention &eta;&nbsp;=&nbsp;1. Introducing &eta; preserves a separate angle dimension and changes which substitutions dimensional analysis can distinguish.</p>
+
+    <p>Several proposals identify quantity-calculating software as a potential use of angle-explicit equations. Quincey and Brown (2016) discuss their computational value, and Mohr, Shirley, Phillips and Trott (2022) develop unit-independent trigonometric functions with computer algebra in mind. Version 3.01 of the SI Brochure (2024) retains dimensionless angles while strengthening guidance to use explicit units where possible for quantities with the unit one.</p>
+
+    <p class="note">xpint does not attempt to settle the metrological question. The switch is off by default, and the default registry retains the SI treatment. The option makes an alternative, internally consistent dimensional convention available per registry.</p>
+
+    <h3 style="margin-top: 30px;">Rotational symmetry and conjugate quantities</h3>
+    <p>The conserved quantities associated with time translation, space translation, and rotation can each be expressed as action per unit of the corresponding symmetry parameter.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Symmetry</th><th>Conserved</th><th>Reads as</th><th>Dimension under <code>[angle]</code></th></tr></thead>
+        <tbody>
+          <tr><td>time translation</td><td class="num owner-xpint">energy</td><td class="num">action / time</td><td class="num">[M][L]&sup2;[T]&#8315;&sup2;</td></tr>
+          <tr><td>space translation</td><td class="num owner-xpint">momentum</td><td class="num">action / length</td><td class="num">[M][L][T]&#8315;&sup1;</td></tr>
+          <tr><td>rotation</td><td class="num owner-xpint">angular momentum</td><td class="num">action / angle</td><td class="num">[M][L]&sup2;[T]&#8315;&sup1;<span class="d">[angle]&#8315;&sup1;</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 20px;">Under the SI treatment, angle is dimensionless and angular momentum therefore shares the dimension of action. Quincey (2021) uses this distinction to motivate separate symbols for the action and spin interpretations. Assigning angle a dimension gives the three rows parallel dimensional forms.</p>
+
+    <h3 style="margin-top: 26px;">Torque as the generalized force conjugate to angle</h3>
+    <p>Generalized force is energy per unit coordinate. Applying that relation to linear and angular coordinates gives:</p>
+
+    <div class="pair">
+      <div class="panel them">
+        <div class="panel-label"><span>Force</span><span class="verdict">conjugate to length</span></div>
+<pre>F = dW/dx
+
+ [energy] / [length]
+ = newton</pre>
+        <div class="outcome">Force is energy per unit <b>length</b>.</div>
+      </div>
+      <div class="panel us">
+        <div class="panel-label"><span>Torque</span><span class="verdict">conjugate to angle</span></div>
+<pre>&tau; = dW/d&theta;
+
+ [energy] / [angle]
+ = joule / radian</pre>
+        <div class="outcome">Torque is energy per unit <b>angle</b> in the conjugate formulation.</div>
+      </div>
+    </div>
+
+    <p style="margin-top: 20px;">Lagrangian mechanics generalises it: for any coordinate <code>q</code>, the generalized force is <code>&part;W/&part;q</code> and the conjugate momentum is <code>&part;L/&part;q&#775;</code>, with dimensions <code>[energy]/[q]</code> and <code>[action]/[q]</code>. One rule produces newton and kg&middot;m/s for a length coordinate, and J/rad and J&middot;s/rad for an angular one. So xpint spells <code>Torque</code> as <code>joule / radian</code> and <code>AngularMomentum</code> as <code>joule * second / radian</code> under this registry. <code>newton * meter</code> carries no angle, which is exactly why it never separated from energy.</p>
+
+    <h3 style="margin-top: 26px;">Dimensional constant &eta; = 1 rad&#8315;&sup1;</h3>
+    <p>The arc-length relation connects angle and length, so the angle-explicit formulation introduces &eta; at that boundary. Related rotational equations inherit the same constant:</p>
+
+    <div class="block">
+      <div class="panel-label"><span>&eta; &equiv; 1 / radian</span><span class="verdict">dimension [angle]&#8315;&sup1;</span></div>
+<pre>s = &eta; r &theta;        <span class="cm"># arc length</span>
+v = &eta; &omega; r        <span class="cm"># tangential speed</span>
+I = &eta;&sup2; &int;r&sup2; dm    <span class="cm"># moment of inertia</span>
+
+<span class="cm"># &tau; = &eta; (r &times; F) is then derived, not asserted:
+#   dW = F&middot;dx = F&middot;(&eta; r d&theta;)  &rarr;  &tau; = dW/d&theta; = &eta; r F</span></pre>
+    </div>
+
+
+    <p style="margin-top: 20px;"><code>r &times; F</code> is not wrong. It is a coordinate-specific evaluation that silently assumes &eta; = 1, which is precisely what the SI convention asserts. The porting rule for existing code is therefore mechanical: <b>each Cartesian <code>r &times;</code> carries an &eta;.</b></p>
+
+    <p>The resulting dimensions preserve the standard rotational identities. The following results are verified against the angle registry:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Identity</th><th>Spelled</th><th>Yields</th></tr></thead>
+        <tbody>
+          <tr><td class="num">L = I &omega;</td><td class="num">(kg&middot;m&sup2;/rad&sup2;)(rad/s)</td><td class="num owner-xpint">J&middot;s/rad &#10003;</td></tr>
+          <tr><td class="num">&tau; = I &alpha;</td><td class="num">(kg&middot;m&sup2;/rad&sup2;)(rad/s&sup2;)</td><td class="num owner-xpint">J/rad &#10003;</td></tr>
+          <tr><td class="num">&tau; = dL/dt</td><td class="num">(J&middot;s/rad)/s</td><td class="num owner-xpint">J/rad &#10003;</td></tr>
+          <tr><td class="num">KE = &frac12; I &omega;&sup2;</td><td class="num">(kg&middot;m&sup2;/rad&sup2;)(rad/s)&sup2;</td><td class="num owner-xpint">J &#10003;</td></tr>
+          <tr><td class="num">P = &tau; &omega;</td><td class="num">(J/rad)(rad/s)</td><td class="num owner-xpint">W &#10003;</td></tr>
+          <tr><td class="num">W = &tau; &theta;</td><td class="num">(J/rad)(rad)</td><td class="num owner-xpint">J &#10003;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top: 26px;">Consequences of the dimensional choice</h3>
+
+    <div class="case">
+      <div class="case-head">
+        <h4>a &nbsp;&middot;&nbsp; Published angular and cyclic conventions</h4>
+        <p>The proton gyromagnetic ratio is quoted both as 2.675&times;10&#8312; rad&middot;s&#8315;&sup1;&middot;T&#8315;&sup1; and as 42.58 MHz&middot;T&#8315;&sup1;. These values describe the same physical constant using angular and cyclic conventions. The normalization example above shows why an API may need to distinguish them.</p>
+      </div>
+    </div>
+
+      <p style="margin-top: 22px;">CODATA 2022 publishes the two forms as separate named constants:</p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>CODATA 2022 entry</th><th>Value</th><th>Unit as published</th><th>Dimension</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>proton gyromag. ratio</td>
+              <td class="num">2.675 221 8708 &times; 10&#8312; </td>
+              <td class="num">s&#8315;&sup1; T&#8315;&sup1;</td>
+              <td class="num">[T]&#8315;&sup1;[&#8230;]</td>
+            </tr>
+            <tr>
+              <td>proton gyromag. ratio <b>in MHz/T</b></td>
+              <td class="num">42.577 478 461</td>
+              <td class="num">MHz T&#8315;&sup1;</td>
+              <td class="num">[T]&#8315;&sup1;[&#8230;] &mdash; identical</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top: 20px;">The values differ by 2&pi;. Under the SI dimensional treatment, their units differ only by the scale factor between hertz and megahertz, so the convention is carried by the entry name rather than dimensionality.</p>
+
+      <p><code>rad</code> does not appear in the CODATA units column for the angular entry. A value transcribed directly from that table therefore does not contain enough unit information for dimensional dispatch.</p>
+
+      <p>Under an angle registry that vocabulary exists, but the standard will not supply it for you: transcribing CODATA verbatim still gives <code>s&#8315;&sup1; T&#8315;&sup1;</code>, which stays interchangeable with <code>MHz&nbsp;T&#8315;&sup1;</code>. You have to <em>choose</em> to write the radian:</p>
+
+      <div class="block">
+        <div class="panel-label"><span>Explicit angular annotation</span><span class="verdict">verified</span></div>
+<pre>dim(<span class="d">"1/second/tesla"</span>)     == dim(<span class="d">"megahertz/tesla"</span>)   <span class="out">&gt;&gt;&gt; True</span>   <span class="cm"># as published</span>
+dim(<span class="d">"radian/second/tesla"</span>) == dim(<span class="d">"megahertz/tesla"</span>)   <span class="err">&gt;&gt;&gt; False</span>  <span class="cm"># as meant</span></pre>
+      </div>
+
+      <p style="margin-top: 20px;" class="note">Writing <code>rad</code> into the unit records the caller's interpretation. The angle registry makes that annotation enforceable; under a default registry both comparisons return <code>True</code>.</p>
+
+    <div class="case">
+      <div class="case-head">
+        <h4>b &nbsp;&middot;&nbsp; Steradian as a derived angular unit</h4>
+        <p>Pint defines <code>steradian = radian ** 2</code> in <code>default_en.txt</code>. Under the SI treatment both sides are dimensionless. With a plane-angle dimension, the same definition gives steradian the dimension <code>[angle]&sup2;</code>.</p>
+      </div>
+      <div class="pair">
+        <div class="panel them">
+          <div class="panel-label"><span>Dimensionless angle</span><span class="verdict">operations permitted</span></div>
+<pre>np.sin(1 * sr)
+<span class="out">&gt;&gt;&gt; 0.8414709848 dimensionless</span>
+
+1 * sr + 1 * rad
+<span class="out">&gt;&gt;&gt; 2.0 steradian</span></pre>
+          <div class="outcome">Plane angle, solid angle, and scalar values share one dimensionality.</div>
+        </div>
+        <div class="panel us">
+          <div class="panel-label"><span>[angle]</span><span class="verdict">rejects</span></div>
+<pre>np.sin(1 * u.sr)
+<span class="err">&gt;&gt;&gt; DimensionalityError:
+    cannot convert [angle] ** 2
+    to [angle]</span>
+
+1 * u.sr + 1 * u.rad
+<span class="err">&gt;&gt;&gt; DimensionalityError</span></pre>
+          <div class="outcome">A solid angle has dimension <code>[angle]&sup2;</code>, so neither operation satisfies the required dimensional relation.</div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 20px;"><b>Why <code>rad&sup2;</code> rather than a second base dimension.</b> For a small patch on a sphere of radius <code>r</code> subtending orthogonal plane angles <code>d&theta;&#8321;</code> and <code>d&theta;&#8322;</code>, the local arc relations give:</p>
+
+    <div class="block">
+      <div class="panel-label"><span>Local spherical patch</span><span class="verdict">radius and &eta; cancel</span></div>
+<pre>dx = &eta; r d&theta;&#8321;        dy = &eta; r d&theta;&#8322;
+
+dA = dx dy   = &eta;&sup2; r&sup2; d&theta;&#8321; d&theta;&#8322;
+d&Omega; = dA / (&eta;&sup2; r&sup2;) = d&theta;&#8321; d&theta;&#8322;      <span class="cm"># no &eta;, no r</span></pre>
+    </div>
+
+    <p style="margin-top: 20px;">The resulting solid angle is the product of the two plane angles, with no remaining length or dimensional constant. For example, a 1&nbsp;mrad &times; 1&nbsp;mrad beam subtends 1&nbsp;&micro;sr.</p>
+
+    <p>This cancellation motivates deriving solid angle from plane angle rather than introducing a second constant. The relation <code>&Omega; = &theta;&#8321;&theta;&#8322;</code> no longer crosses between length and angle once the radius has cancelled.</p>
+
+    <p>Two additional consequences support that representation:</p>
+    <ul class="plain">
+      <li><b>Higher-dimensional generalization.</b> The angle subtended in <code>n</code> dimensions has dimension <code>[angle]</code><sup><code>n&minus;1</code></sup>: 2&pi;&nbsp;rad on the circle, 4&pi;&nbsp;rad&sup2; on the sphere, and 2&pi;&sup2;&nbsp;rad&sup3; on <code>S&sup3;</code>.</li>
+      <li><b>Small-angle optical calculations.</b> Under <code>rad&sup2;</code>, <code>solid_angle = theta_x * theta_y</code> has the expected solid-angle dimension without an additional conversion constant.</li>
+    </ul>
+
+    <p>Kalinin treats plane and solid angle as different quantity kinds. They are already non-comparable in this representation because <code>rad</code> and <code>rad&sup2;</code> have different dimensions. Other equal-dimensional meanings may still require kinds: moment of inertia in <code>kg&middot;m&sup2;/rad&sup2;</code> and mass-area per solid angle in <code>kg&middot;m&sup2;/sr</code> share a dimension. Both operands must carry kinds for that additional distinction to be enforced.</p>
+
+    <p><b>This is a design choice rather than a theorem.</b> An independent <code>[solid_angle]</code> with a second constant is also self-consistent and more discriminating. Identifying <code>sr</code> with <code>rad&sup2;</code> removes distinctions of the form <code>[solid_angle] &minus; 2[angle]</code>, including torsional stiffness versus energy per solid angle and angular variance versus solid angle. xpint follows the <code>sr = rad&sup2;</code> treatment used by Leonard and Kalinin and retains &eta; as the only added dimensional constant.</p>
+
+    <div class="case">
+      <div class="case-head">
+        <h4>c &nbsp;&middot;&nbsp; Dimensional separation of luminous flux and intensity</h4>
+        <p>The lumen is candela multiplied by steradian. Once steradian carries <code>rad&sup2;</code>, luminous flux and luminous intensity have different dimensions.</p>
+      </div>
+      <div class="pair">
+        <div class="panel them">
+          <div class="panel-label"><span>Dimensionless angle</span><span class="verdict">indistinguishable</span></div>
+<pre>dim(lumen) == dim(candela)
+<span class="out">&gt;&gt;&gt; True</span></pre>
+          <div class="outcome">Luminous flux and luminous intensity share a dimension.</div>
+        </div>
+        <div class="panel us">
+          <div class="panel-label"><span>[angle]</span><span class="verdict">distinct</span></div>
+<pre>dim(u.lumen)
+<span class="out">&gt;&gt;&gt; [luminosity] * [angle] ** 2</span>
+dim(u.candela)
+<span class="out">&gt;&gt;&gt; [luminosity]</span></pre>
+          <div class="outcome">Luminous flux includes the solid-angle factor; luminous intensity does not.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 30px;">Trigonometric functions and series expansions</h3>
+    <p>This is the part that touches existing code. Once an angle carries a dimension, a trigonometric function has a <em>domain</em>, and a series expansion in an angle stops being dimensionally valid. Both are enforced.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Expression</th><th>Ordinary registry</th><th><code>angle_dimension=True</code></th></tr></thead>
+        <tbody>
+          <tr><td class="num">np.sin(0.1 * rad)</td><td class="num">0.0998334 dimensionless</td><td class="num owner-xpint">0.0998334 dimensionless &mdash; unchanged</td></tr>
+          <tr><td class="num">np.sin(90 * degree)</td><td class="num">1.0 dimensionless</td><td class="num owner-xpint">1.0 dimensionless &mdash; scale still converts</td></tr>
+          <tr><td class="num">np.sin(0.1 * dimensionless)</td><td class="num">0.0998334 dimensionless</td><td class="num" style="color:var(--warn)">DimensionalityError</td></tr>
+          <tr><td class="num">np.sin(0.1)&nbsp;&nbsp;<span style="color:var(--ink-soft)">bare float</span></td><td class="num">0.0998334</td><td class="num">0.0998334 &mdash; never reaches the registry</td></tr>
+          <tr><td class="num">np.sin(1 * sr)</td><td class="num">0.841471 dimensionless</td><td class="num" style="color:var(--warn)">DimensionalityError</td></tr>
+          <tr><td class="num">np.arcsin(0.5 * dimensionless)</td><td class="num">0.5236 radian</td><td class="num owner-xpint">0.5236 radian &mdash; dimension [angle]</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 20px;"><code>sin</code>, <code>cos</code>, and <code>tan</code> require <code>[angle]</code>, so a dimensionless quantity is not accepted; use <code>x * u.radian</code> when <code>x</code> represents an angle in radians. Inverse trigonometric functions return a quantity with dimension <code>[angle]</code>, and callers request a scalar representation explicitly.</p>
+
+    <p><b>Series expansions need &eta;.</b> This is the change most likely to surprise, and it is a genuine dimensional error rather than a restriction:</p>
+
+    <div class="pair">
+      <div class="panel them">
+        <div class="panel-label"><span>Naive Taylor series</span><span class="verdict">rejected</span></div>
+<pre>theta = 0.1 * u.rad
+
+theta - theta**3/6
+<span class="err">&gt;&gt;&gt; DimensionalityError:
+    cannot convert [angle]
+    to [angle]**3</span></pre>
+        <div class="outcome">The series terms have incompatible dimensions until the angular argument is made dimensionless.</div>
+      </div>
+      <div class="panel us">
+        <div class="panel-label"><span>With &eta;</span><span class="verdict">correct</span></div>
+<pre>eta = 1 / u.radian
+x = (eta * theta).to(<span class="d">""</span>)
+
+x - x**3/6
+<span class="out">&gt;&gt;&gt; 0.0998333 dimensionless</span>
+<span class="cm"># np.sin(0.1) = 0.0998334</span></pre>
+        <div class="outcome">In the angle-explicit convention, transcendental functions use the dimensionless argument <code>&eta;&theta;</code>. The corresponding small-angle forms are <code>sin &theta; &asymp; &eta;&theta;</code> and <code>tan &theta; &asymp; &eta;&theta;</code>.</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 30px;">Unit-independent angular arguments</h3>
+    <p><code>&eta;&theta;</code> is independent of the unit used to express the angle, while <code>.magnitude</code> is not. The same angle written four ways illustrates the difference:</p>
+
+    <div class="tablewrap">
+      <table class="bench">
+        <thead><tr><th>As written</th><th><code>.magnitude</code></th><th><code>float(&eta;&theta;)</code></th></tr></thead>
+        <tbody>
+          <tr><td class="num">90 degree</td><td class="num" style="color:var(--warn)">90.000000</td><td class="num hi">1.570796327</td></tr>
+          <tr><td class="num">1.5708 radian</td><td class="num">1.570796</td><td class="num hi">1.570796327</td></tr>
+          <tr><td class="num">100 grade</td><td class="num" style="color:var(--warn)">100.000000</td><td class="num hi">1.570796327</td></tr>
+          <tr><td class="num">0.25 turn</td><td class="num" style="color:var(--warn)">0.250000</td><td class="num hi">1.570796327</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 20px;">A series evaluated directly from <code>.magnitude</code> produces different results for these equivalent representations because the callee does not know the source unit. Evaluating it from <code>&eta;&theta;</code> gives the same dimensionless argument in all four cases.</p>
+
+    <p>The same distinction applies to wave phase. Under the SI dimensional treatment, <code>f&middot;t</code> and <code>&omega;&middot;t</code> are both dimensionless even though substituting one convention for the other introduces a factor of 2&pi;. Under the angle registry they have different dimensions:</p>
+
+    <div class="pair">
+      <div class="panel us">
+        <div class="panel-label"><span>&omega; in rad/s</span><span class="verdict">correct</span></div>
+<pre>omega = 2.0 * u.rad / u.s
+t     = 3.0 * u.s
+
+(eta * omega * t).to(<span class="d">""</span>)
+<span class="out">&gt;&gt;&gt; 6.0 dimensionless</span></pre>
+        <div class="outcome">The product is dimensionless and can be passed to <code>exp</code>.</div>
+      </div>
+      <div class="panel them">
+        <div class="panel-label"><span>f in Hz</span><span class="verdict">caught</span></div>
+<pre>f = 2.0 * u.Hz     <span class="cm"># wrong quantity</span>
+t = 3.0 * u.s
+
+(eta * f * t).to(<span class="d">""</span>)
+<span class="err">&gt;&gt;&gt; DimensionalityError
+    leftover [angle]&#8315;&sup1;</span></pre>
+        <div class="outcome"><code>f&middot;t</code> is <em>already</em> dimensionless, so &eta; has nothing to cancel and the leftover <code>[angle]&#8315;&sup1;</code> exposes the substitution. <b>The missing 2&pi; becomes a dimensional error.</b></div>
+      </div>
+    </div>
+
+    <p style="margin-top: 20px;">A bare Python number does not enter the registry. For example, <code>np.sin(90)</code> interprets 90 as radians. Once the value is represented as a quantity, the registry can distinguish a dimensionless argument from an angle:</p>
+
+    <div class="block">
+      <div class="panel-label"><span>Explicit angular arguments</span><span class="verdict">verified</span></div>
+<pre>np.sin(<span class="kw">90.0</span>)                  <span class="out">&gt;&gt;&gt; 0.8939966636</span>  <span class="cm"># interpreted as radians</span>
+np.sin(<span class="kw">90.0</span> * u.dimensionless) <span class="err">&gt;&gt;&gt; DimensionalityError</span>
+np.sin(<span class="kw">90.0</span> * u.degree)        <span class="out">&gt;&gt;&gt; 1.0 dimensionless</span> <span class="cm"># unambiguous</span></pre>
+    </div>
+
+    <p style="margin-top: 20px;">These cases share an implicit angular convention. With an angle dimension and &eta;, the convention becomes part of dimensional validation.</p>
+
+    <p style="margin-top: 20px;"><b>Wave phase.</b> A phase must be dimensionless before it enters an exponential. Under this registry <code>&omega;t</code> has dimension <code>[angle]</code>, while <code>&eta;&omega;t</code> is dimensionless. Consequently, <code>exp(i(kx &minus; &omega;t))</code> uses <code>exp(i&middot;&eta;&middot;(kx &minus; &omega;t))</code> when both <code>k</code> and <code>&omega;</code> are angular quantities.</p>
+
+    <h3 style="margin-top: 26px;">Buckingham &pi; analysis with &eta;</h3>
+    <p>Adding an angle dimension raises the rank <code>k</code> of the dimensional matrix where angular quantities appear. Adding &eta; raises the variable count <code>n</code> by one, leaving <code>n &minus; k</code> unchanged and preserving the number of Buckingham &pi; groups.</p>
+    <p>The hazard runs one way only. <b>Omit &eta; and the analysis silently over-constrains.</b> On the simple pendulum, by matrix rank:</p>
+
+    <div class="tablewrap">
+      <table class="bench">
+        <thead><tr><th>Treatment</th><th>n</th><th>k</th><th>&pi; groups</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>SI, angle dimensionless</td><td class="num">5</td><td class="num">3</td><td class="num">2</td><td class="hi">T&radic;(g/L) and &theta;&#8320; &mdash; correct</td></tr>
+          <tr><td>[angle], &eta; omitted</td><td class="num">5</td><td class="num">4</td><td class="num">1</td><td style="color:var(--warn)">amplitude cannot appear &mdash; wrong</td></tr>
+          <tr><td>[angle], &eta; declared</td><td class="num">6</td><td class="num">4</td><td class="num">2</td><td class="hi">T&radic;(g/L) and &eta;&theta;&#8320; &mdash; correct</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 20px;">The failure mode is a plausible result rather than an error, so &eta; must be admitted as a dimensional constant exactly as <code>c</code> or <code>k<sub>B</sub></code> would be.</p>
+
+    <h3 style="margin-top: 26px;">Explicit scalar conversion</h3>
+    <p>Under this registry an angle is not a scalar, so conversion requires an explicit target unit. <code>m_as</code> returns a magnitude in the named angular unit, while multiplying by &eta; produces a dimensionless value in the radian convention.</p>
+
+    <div class="block">
+      <div class="panel-label"><span>Escape hatches</span><span class="verdict">no new API</span></div>
+<pre>theta = 90 * u.degree
+
+theta.m_as(<span class="d">"degree"</span>)    <span class="out">&gt;&gt;&gt; 90.0</span>
+theta.m_as(<span class="d">"radian"</span>)    <span class="out">&gt;&gt;&gt; 1.5707963267948966</span>
+
+eta = <span class="kw">1</span> / u.radian
+float((theta * eta).to(<span class="d">""</span>))
+<span class="out">&gt;&gt;&gt; 1.5707963267948966</span>
+
+float(theta)
+<span class="err">&gt;&gt;&gt; DimensionalityError: an angle is not a
+    number under angle_dimension=True, so
+    float() cannot choose a convention for
+    you; name the unit explicitly with
+    .m_as("radian") or .m_as("degree") &hellip;</span></pre>
+    </div>
+
+    <p style="margin-top: 20px;">Pint's own <code>m_as(unit)</code> already does the job, so xpint adds no stripping API: anything that turned an angle into a number without naming a unit would guess radian, reinstating the surprise the switch exists to remove. Going the other way is ordinary multiplication, <code>x * u.radian</code>. The only code this needed was an error message that names the alternatives instead of leaving a bare dimensionality failure.</p>
+
+    <h3 style="margin-top: 30px;">Prior art and references</h3>
+    <p><a href="https://www.boost.org/doc/libs/release/doc/html/boost_units.html">Boost.Units</a> has represented plane and solid angle as base dimensions since 2007 and provides corresponding trigonometric support. Simscape documents the opposite choice, defining <code>rad</code> as <code>m/m</code> so trigonometric functions accept angular arguments directly and torque in N&middot;m remains dimensionally equal to energy in J. xpint exposes the choice per registry.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Reference</th><th>Bears on</th></tr></thead>
+        <tbody>
+          <tr><td>Resolution 8 of the 20th CGPM (1995); Resolution 12 of the 11th CGPM (1960)</td><td>The two decisions that created and then abolished the supplementary class.</td></tr>
+          <tr><td>SI Brochure, 9th edn, v3.01 (BIPM, 2024)</td><td>Current status, and the strengthened guidance on explicit units for quantities with the unit one.</td></tr>
+          <tr><td>P J Mohr and W D Phillips, <em>Metrologia</em> <b>52</b> 40 (2015)</td><td>The paper that reopened the question at the CCU.</td></tr>
+          <tr><td>P Quincey and R J C Brown, <em>Metrologia</em> <b>53</b> 998 (2016)</td><td>Implications of adopting plane angle as a base quantity; names software as a beneficiary.</td></tr>
+          <tr><td>I Mills, <em>Metrologia</em> <b>53</b> 991 (2016)</td><td>The radian and the cycle as competing natural units.</td></tr>
+          <tr><td>P Quincey, P J Mohr and W D Phillips, <em>Metrologia</em> <b>56</b> 043001 (2019)</td><td>Why angles are inherently neither length ratios nor dimensionless.</td></tr>
+          <tr><td>M I Kalinin, <em>Metrologia</em> <b>56</b> 065009 (2019)</td><td>Against the 1995 reasoning; treats solid angle as a distinct kind.</td></tr>
+          <tr><td>B P Leonard, <em>Metrologia</em> <b>58</b> 052001 (2021)</td><td>A dimensionally consistent treatment of angle and solid angle.</td></tr>
+          <tr><td>P Quincey, <em>Metrologia</em> <b>58</b> 053002 (2021)</td><td>A detailed proposal, including the &#295; action-versus-spin symbol problem.</td></tr>
+          <tr><td>P J Mohr, E Shirley, W D Phillips and M Trott, <em>Metrologia</em> <b>59</b> 053001 (2022)</td><td>Unit-independent trigonometric functions, written with computer algebra in mind.</td></tr>
+          <tr><td>J B Brinsmade, <em>Am. J. Phys.</em> <b>4</b> 175 (1936); K R Brownstein, <em>Am. J. Phys.</em> <b>65</b> 605 (1997)</td><td>The long pedagogical tail of the same argument.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+      </div>
+    </details>
+
+    <p class="note" style="margin-top: 22px;">Scope: v0 supports Pint's stock definition set, at construction time, with no runtime toggle and no custom contexts. The angle registry scopes its internal redefinitions so the caller's <code>on_redefinition</code> policy remains in force for later definitions; <code>on_redefinition="raise"</code> is supported. Values from scoped registries can be pickled; select an xpint application registry with matching definitions and angle mode before unpickling. <code>examples/angle_dimensions.py</code> exercises the public behavior through both registry modes.</p>
+  </section>
+
+  <!-- ================= STATUS ================= -->
+  <section>
+    <p class="eyebrow">Status</p>
+    <h2>What exists today</h2>
+    <p>The semantic foundation and factor-level designation algebra are implemented and tested. Kinds, designations, affine roles, pickling against a selectable xpint application registry, and a bounded NumPy, Dask, xarray, and masked-array compatibility matrix are in place. Unsupported operations raise rather than discarding metadata.</p>
+    <p>The <code>angle_dimension=True</code> registry is implemented within the scope stated above: stock definitions and construction-time selection, with no runtime toggle. The steradian is derived as <code>rad&sup2;</code>, and the angle-specific kind catalogue uses conjugate dimensions for torque, angular momentum, and moment of inertia.</p>
+    <p>0.1.0b1 is the first public beta. This page describes the behaviour implemented for 0.1.0b1; beta status means the API and the supported compatibility surface can still change.</p>
+  </section>
+
+  <footer>
+    <p>xpint extends Pint and does not modify Pint source or its application registry. Pint remains authoritative for ordinary unit definitions and conversion; the optional angle registry deliberately supplies an alternative dimensional treatment of plane and solid angle. The comparisons on this page are behavioral observations against Pint 0.25.3 and identify distinctions outside Pint's scope.</p>
+    <p>xpint is licensed BSD 3-Clause, matching Pint's terms. Copyright &copy; 2026 Matthias C. Schabel. It vendors no Pint source; Pint is copyright 2012 Hernan E. Grecco and contributors, and is used as a dependency under its own terms.</p>
+    <p class="colophon">Documentation for 0.1.0b1 &middot; examples verified 2026-10-15</p>
+  </footer>
+
+</div>
+
+</html>

@@ -1,0 +1,17 @@
+.DS_Store
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.venv-minimal/
+__pycache__/
+*.egg-info/
+*.py[cod]
+build/
+dist/
+htmlcov/
+
+# Agent guidance is local to each maintainer.
+AGENTS.md
+CLAUDE.md

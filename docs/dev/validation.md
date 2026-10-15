@@ -1,0 +1,116 @@
+# Validation and regression evidence
+
+**Status:** Active
+**Last updated:** 2026-10-15
+**Scope:** Release validation results, the language-neutral conformance contract, and benchmark procedure.
+
+## Context
+
+Tests are the behavioral evidence; this note records what they cannot: which
+configurations a release was validated on, the shared conformance contract, and
+how performance is measured. Results are dated and describe one commit. Rerun
+them on the actual release commit; commands live in the
+[release checklist](release_checklist.md).
+
+## Current Decision
+
+### Release validation
+
+| Release | Commit | Platform / Python | Pint / NumPy | Result |
+| --- | --- | --- | --- | --- |
+| 0.1.0b1 | `350e0d6` (pre-publication history) | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 834 passed, 0 skipped, 91.77% coverage; strict mypy, Twine, minimal install passed |
+| 0.1.0b1 | `350e0d6` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b1 | `350e0d6` | macOS arm64 / 3.14.6 (free-threaded build) | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b1 | public root commit | hosted Linux / 3.12–3.14 | 0.25.3 / locked | Pending |
+
+The three local builds produced identical artifacts:
+`xpint-0.1.0b1-py3-none-any.whl` SHA-256 `79d96702ada720c746caa986ad81aa83e82738cee60b98dfbdf2125441deac78`,
+`xpint-0.1.0b1.tar.gz` SHA-256 `c72b60b015dd942cce3a5004d34448588909f522aede3b71089b29e3747d3af3`.
+The public root commit differs from `350e0d6` only by dropping agent guidance,
+which is not packaged, and by `.gitignore`, which the sdist includes, so its
+sdist hash will differ. The uploaded artifacts are the ones built by
+`publish.yml` and are checked against that run's manifest.
+
+Record one row per configuration once the release commit is validated: test
+count, coverage, and whether the run used the installed wheel
+(`XPINT_REQUIRE_WHEEL=1`) or the source tree. Local macOS results and hosted
+Linux CI are separate evidence; neither substitutes for the other.
+
+What the release checks establish:
+
+- The wheel contains `xpint/`, `py.typed`, and the license; the sdist adds the
+  examples and CHANGELOG. Tests, fixtures, maintainer docs, and agent guidance are
+  excluded from both.
+- Pint is the only runtime dependency. `tools/check_minimal_install.py` verifies
+  that optional packages are absent and refuses to run under `python -O`, which
+  would strip its assertions.
+- The development dependency group installs every optional dependency the suite
+  uses. A few tests still use `pytest.importorskip` (xarray, pint-xarray), so check
+  the skip count in release runs; it should be zero.
+- Inside pytest, `XPINT_REQUIRE_WHEEL=1` asserts that `xpint` was imported from
+  site-packages, so a path override cannot test the source tree by accident.
+
+### Language-neutral conformance
+
+[semantic_conformance.json](../../tests/fixtures/semantic_conformance.json) is
+schema version 1 with scalar cases. Its [Python consumer](../../tests/test_conformance.py)
+uses public APIs and the default (dimensionless-angle) registry. No MATLAB
+consumer has run, so the fixture is a contract candidate, not evidence of parity.
+
+- Operands give a magnitude, a unit name, an optional kind, and an optional
+  factor designation. Unit names may map to each library's spelling.
+- Operations are `add`, `subtract`, `multiply`, and `divide`; consumers map them
+  to native APIs without evaluating source text.
+- A successful expectation gives the reporting unit, magnitude, kind,
+  temperature role, and sorted designation signature. Signature rows hold a
+  physical dimension name, an opaque label, and a rational exponent as text; a
+  volume label contributes exponent 3 to length. Conversion to the reporting
+  unit must preserve the signature.
+- The error category `semantic_mismatch` means rejection, not a sentinel value;
+  each consumer maps it to its own exception type.
+- Both tolerances are 1e-12, sized for scale and offset rounding in these short
+  expressions, not as a general scientific tolerance.
+
+Extend the cases only together with the other consumer's owner.
+
+### Performance
+
+```bash
+uv run python benchmarks/benchmark_pint_passthrough.py
+uv run python benchmarks/benchmark_semantic_safety.py --backend pint
+uv run python benchmarks/benchmark_semantic_safety.py --backend xpint
+uv run python benchmarks/benchmark_semantic_safety.py --source-root /path/to/other/src
+```
+
+Run source variants in fresh processes, rotate their order, and record Python,
+Pint, NumPy, hardware, and source revisions. The safety harness writes JSON to
+stdout and diagnostics to stderr, and reports timings and traced allocations
+separately. Compare equal dtype, alias, shape, and failure contracts. Ratios are
+diagnostics, not CI assertions.
+
+Indicative ratios to Pint on 1,000-element arrays and scalars (Python 3.12, Pint
+0.25.3, NumPy 2.5.2, Apple silicon, 2026-10-15): unclassified arithmetic about
+1.4–1.5×, kinded addition about 1.5×, kinded multiplication about 3×, `to()`
+about 1.35×. The cost is the classification checks and result construction.
+Staged in-place NumPy operations (powers, `ito()`, temperature-role addition and
+subtraction, classified multiplication and division) also copy the buffer so
+that a failure leaves values and metadata unchanged; that copy grows with array
+size and is deliberate.
+
+## Alternatives Considered
+
+Editable-install tests do not establish wheel correctness. Silently skipped
+optional tests hide adapter gaps. Microbenchmark ratios without controlled
+variance cannot support performance-neutrality claims.
+
+## Deferred Work
+
+Hosted Windows CI, a broader dependency matrix, and the MATLAB conformance
+consumer.
+
+## Next Steps
+
+Fill in the release row from the validated release commit. Keep changed
+contracts in [architecture](../architecture.md) and
+[compatibility](../compatibility.md), and public behavior changes in the root
+CHANGELOG.
