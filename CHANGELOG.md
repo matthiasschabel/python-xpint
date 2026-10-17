@@ -2,6 +2,18 @@
 
 All notable public changes to xpint are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- `m_as()` on a designated value requires a target carrying the same
+  designations. A plain target such as `"mol/L"` or `1 / s` used to adopt them
+  and return the bare number unchecked, so `m_as()` could read a value whose
+  designations had not cancelled (a gadoteridol relaxivity times a gadobutrol
+  concentration) as an ordinary rate. It now raises `TypeError`. Pass a
+  designated unit, such as `mol["O2"] / L`, or call `as_undesignated()` first.
+  `to()`, `ito()` and `.magnitude` are unchanged.
+
 ## [0.1.0b1] - 2026-10-15
 
 First public beta. No upgrade from a previous public version is required.

@@ -1039,7 +1039,8 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         self._require_discrete_arithmetic_supported(other, "divmod")
         return super().__rdivmod__(other)
 
-    def _conversion_target(self, other: Any) -> SemanticUnit:
+    def _requested_target(self, other: Any) -> SemanticUnit:
+        # The target exactly as the caller wrote it, before any designation adoption.
         registry = cast(SemanticRegistry, self._REGISTRY)
         registry._require_owned(other, name="target units")
         target_container = (
@@ -1048,7 +1049,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             else to_units_container(other, cast(pint.UnitRegistry[Any], registry))
         )
         target_factors = getattr(other, "_semantic_factors", None)
-        target_units = registry.Unit._from_parts(
+        return registry.Unit._from_parts(
             target_container,
             semantic_factors=(
                 registry._factors_for_units(target_container)
@@ -1056,6 +1057,10 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 else target_factors
             ),
         )
+
+    def _conversion_target(self, other: Any) -> SemanticUnit:
+        registry = cast(SemanticRegistry, self._REGISTRY)
+        target_units = self._requested_target(other)
         if not target_units.has_designation and self.has_designation:
             target_units = self._adopt_designations(target_units)
         if self.designation_signature != target_units.designation_signature:
@@ -1147,6 +1152,29 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             candidate, kind=self._converted_kind(), semantic_factors=target_units._semantic_factors
         )
         self._commit_inplace_result(candidate, staged_magnitude)
+
+    @override
+    def m_as(self, units: Any) -> Any:
+        """Return the magnitude expressed in ``units``, which must name every designation.
+
+        A bare magnitude is where designation checks end, so unlike ``to()`` a plain
+        target does not adopt the source's designations: the caller must state what the
+        number means. ``(5 * mmol["O2"] / L).m_as(mmol["O2"] / L)`` is ``5``, while
+        ``m_as("mmol/L")`` on the same value raises. Values without designations behave
+        as in Pint. Kinds are dropped with the units, as ``.magnitude`` drops them.
+
+        Raises:
+            TypeError: If the value carries designations and the target names none, or
+                the target's designations or affine role conflict with the value's.
+        """
+        if self.has_designation and not self._requested_target(units).has_designation:
+            raise TypeError(
+                f"m_as() needs a target that carries the designations of {self.units}; "
+                "a plain target would extract a number without checking them. Pass a unit "
+                "object with the same designations, such as mmol['O2'] / L, or call "
+                "as_undesignated() first to drop them deliberately."
+            )
+        return self.to(units).magnitude
 
     def _require_kind_conversion_dimensions(self, result: SemanticQuantity) -> None:
         if self._kind is not None and result.dimensionality != self.dimensionality:

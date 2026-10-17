@@ -211,7 +211,9 @@ The default is xpint's shared symbol registry. Neither function changes Pint's
 application registry. Pickle is not a versioned cross-language interchange schema.
 
 `.magnitude`, `m_as()` after explicit conversion, and physical registry conversion
-are deliberate extraction boundaries. Plain tuple and timedelta adapters reject
+are deliberate extraction boundaries. `m_as()` is the checked one: a designated value
+needs a target naming the same designations, because a plain target would otherwise
+adopt them and return a number nobody checked. Plain tuple and timedelta adapters reject
 semantic state they cannot encode. Scalar hashing includes semantic state and
 registry ownership; arrays remain unhashable. Mixed comparison with ordinary
 Pint has an [inherited asymmetry](compatibility.md#comparison-and-extraction).

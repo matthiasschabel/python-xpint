@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from xpint import DesignationTerm, SemanticQuantity, SemanticRegistry
-from xpint.units import J, L, N, degC, m, mL, mM, mmol, mol, ureg
+from xpint.units import J, L, N, degC, m, mL, mM, mmol, mol, ms, s, ureg
 
 
 @pytest.mark.parametrize("automatic", [False, True])
@@ -555,6 +555,38 @@ def test_designated_formatting_rejects_unsupported_unit_specs(spec: str, quantit
         format(value, spec)
 
 
+@pytest.mark.parametrize("target", ["mol/L", ureg.mole / L, None])
+def test_m_as_rejects_a_target_without_the_value_designations(target: Any) -> None:
+    oxygen = 5 * mmol["O2"] / L
+    with pytest.raises(TypeError, match=r"m_as\(\) needs a target that carries the designations"):
+        oxygen.m_as(target)
+
+
+def test_m_as_rejects_mismatched_designations_after_cancellation() -> None:
+    # The physical units cancel to 1/s, but gadobutrol and gadoteridol do not.
+    rate = (4.5 / (mM["gadoteridol"] * s)) * (0.5 * mM["gadobutrol"])
+    with pytest.raises(TypeError, match="needs a target that carries the designations"):
+        rate.m_as(1 / s)
+    with pytest.raises(TypeError, match="same designation signature"):
+        rate.m_as(1 / (mM["gadoteridol"] * s))
+
+
+def test_m_as_returns_the_magnitude_in_a_matching_designated_target() -> None:
+    oxygen = 5 * mmol["O2"] / L
+    assert oxygen.m_as(mol["O2"] / L) == pytest.approx(0.005, rel=1e-15, abs=0.0)
+    relaxivity = 4.5 / (mM["gadoteridol"] * s)
+    assert relaxivity.m_as(1 / (mM["gadoteridol"] * ms)) == pytest.approx(
+        0.0045, rel=1e-15, abs=0.0
+    )
+
+
+def test_m_as_accepts_a_plain_target_after_designations_cancel_or_are_removed() -> None:
+    rate = (4.5 / (mM["gadoteridol"] * s)) * (0.5 * mM["gadoteridol"])
+    assert rate.m_as(1 / ms) == pytest.approx(0.00225, rel=1e-15, abs=0.0)
+    oxygen = 5 * mmol["O2"] / L
+    assert oxygen.as_undesignated().m_as("mol/L") == pytest.approx(0.005, rel=1e-15, abs=0.0)
+
+
 @pytest.mark.parametrize("target", ["mol/L", ureg.mole / L])
 def test_plain_conversion_targets_adopt_designations(target: Any) -> None:
     oxygen = 5 * mmol["O2"] / L
@@ -562,7 +594,6 @@ def test_plain_conversion_targets_adopt_designations(target: Any) -> None:
     assert converted.designation_signature == oxygen.designation_signature
     assert str(converted.units) == "mole[O2] / liter"
     assert converted.magnitude == pytest.approx(0.005, rel=1e-15, abs=0.0)
-    assert oxygen.m_as(target) == pytest.approx(0.005, rel=1e-15, abs=0.0)
     rebuilt = ureg.Quantity(oxygen, target)
     assert rebuilt == converted
     assert oxygen.is_compatible_with(target)

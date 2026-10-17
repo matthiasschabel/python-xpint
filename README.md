@@ -111,10 +111,16 @@ unit, such as the substance in `mmol["O2"] / L`:
   mismatch is false. Scalar conversion (`float()`, `int()`) and undefined NumPy
   operations reject any retained designation.
 - Converting to a plain unit keeps the source's designations:
-  `oxygen.to("mol/L")` is `0.005 mole[O2] / liter`, and `oxygen.m_as("mol/L")` is
-  `0.005`. A designated target must match exactly, so `oxygen.to(mol["CO2"] / L)`
-  is rejected. The same rules apply to `ito()`, compact and preferred
-  conversions, construction from another quantity, and registry `convert()`.
+  `oxygen.to("mol/L")` is `0.005 mole[O2] / liter`. A designated target must
+  match exactly, so `oxygen.to(mol["CO2"] / L)` is rejected. The same rules apply
+  to `ito()`, compact and preferred conversions, construction from another
+  quantity, and registry `convert()`.
+- `m_as()` returns a bare number, so it does not adopt designations: the target
+  must name them. `oxygen.m_as(mol["O2"] / L)` is `0.005`, while
+  `oxygen.m_as("mol/L")` raises `TypeError`. Mismatches that survive physical
+  cancellation are caught too: a gadoteridol relaxivity times a gadobutrol
+  concentration cannot be read with `.m_as(1 / s)`. `.magnitude` remains Pint's
+  unchecked accessor; use `as_undesignated()` to drop designations deliberately.
 - `with_designation(label)` labels a value whose unit is a single factor, such as
   `(5 * mmol).with_designation("O2")`; `as_undesignated()` removes every label.
 - Unit reduction keeps designations and physical scale:
