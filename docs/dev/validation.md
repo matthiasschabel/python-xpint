@@ -1,7 +1,7 @@
 # Validation and regression evidence
 
 **Status:** Active
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-16
 **Scope:** Release validation results, the language-neutral conformance contract, and benchmark procedure.
 
 ## Context
@@ -21,7 +21,8 @@ them on the actual release commit; commands live in the
 | 0.1.0b1 | `350e0d6` (pre-publication history) | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 834 passed, 0 skipped, 91.77% coverage; strict mypy, Twine, minimal install passed |
 | 0.1.0b1 | `350e0d6` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
 | 0.1.0b1 | `350e0d6` | macOS arm64 / 3.14.6 (free-threaded build) | 0.25.3 / 2.5.2 | Same results |
-| 0.1.0b1 | public root commit | hosted Linux / 3.12–3.14 | 0.25.3 / locked | Pending |
+| 0.1.0b1 | `a23e0f1` (tag `v0.1.0b1`) | hosted Ubuntu 24.04 / 3.12.15, 3.13.16, 3.14.8 | 0.25.3 / locked | `publish.yml` run 38838972361, installed wheel: 837 passed per job; minimal install passed |
+| 0.1.0b1 | PyPI upload | macOS arm64 / 3.12.12 | 0.25.3 / — | Fresh `pip install xpint==0.1.0b1` from PyPI; minimal install passed |
 
 The three local builds produced identical artifacts:
 `xpint-0.1.0b1-py3-none-any.whl` SHA-256 `79d96702ada720c746caa986ad81aa83e82738cee60b98dfbdf2125441deac78`,
@@ -30,6 +31,11 @@ The public root commit differs from `350e0d6` only by dropping agent guidance,
 which is not packaged, and by `.gitignore`, which the sdist includes, so its
 sdist hash will differ. The uploaded artifacts are the ones built by
 `publish.yml` and are checked against that run's manifest.
+
+Published 2026-10-16 02:13 UTC from run 38838972361. PyPI SHA-256 digests match
+that run's manifest: wheel `851a93c97bb8952c551f0251471a96b2139b41e907bb17d7f8ef79078b1bf487`,
+sdist `9fbd7806077dc6eb85bf3ef054d046217c712bc046ab186ddcf8badd32ee28ea`. The wheel's
+file contents equal a local build of the tag; the sdist files equal the tagged tree.
 
 Record one row per configuration once the release commit is validated: test
 count, coverage, and whether the run used the installed wheel
