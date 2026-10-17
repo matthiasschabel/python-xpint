@@ -1,7 +1,7 @@
 # Validation and regression evidence
 
 **Status:** Active
-**Last updated:** 2026-10-16
+**Last updated:** 2026-10-17
 **Scope:** Release validation results, the language-neutral conformance contract, and benchmark procedure.
 
 ## Context
@@ -23,8 +23,15 @@ them on the actual release commit; commands live in the
 | 0.1.0b1 | `350e0d6` | macOS arm64 / 3.14.6 (free-threaded build) | 0.25.3 / 2.5.2 | Same results |
 | 0.1.0b1 | `a23e0f1` (tag `v0.1.0b1`) | hosted Ubuntu 24.04 / 3.12.15, 3.13.16, 3.14.8 | 0.25.3 / locked | `publish.yml` run 38838972361, installed wheel: 837 passed per job; minimal install passed |
 | 0.1.0b1 | PyPI upload | macOS arm64 / 3.12.12 | 0.25.3 / — | Fresh `pip install xpint==0.1.0b1` from PyPI; minimal install passed |
+| 0.1.0b2 | `44406f4` | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 843 passed, 0 skipped, 92% coverage; strict mypy, Twine, minimal install passed |
+| 0.1.0b2 | `44406f4` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b2 | `44406f4` | macOS arm64 / 3.14.6 (free-threaded build) | 0.25.3 / 2.5.2 | Same results |
 
-The three local builds produced identical artifacts:
+The three local 0.1.0b2 builds of `44406f4` produced identical artifacts:
+`xpint-0.1.0b2-py3-none-any.whl` SHA-256 `b6ca5818f44a67859225fa64e4c5b371476e723705f2039961510f886eb472d0`,
+`xpint-0.1.0b2.tar.gz` SHA-256 `65a4dfdc9b3b7d14d3add92e69630bed246eb85ae7c24b40491a57481cfd97a3`.
+
+The three local 0.1.0b1 builds produced identical artifacts:
 `xpint-0.1.0b1-py3-none-any.whl` SHA-256 `79d96702ada720c746caa986ad81aa83e82738cee60b98dfbdf2125441deac78`,
 `xpint-0.1.0b1.tar.gz` SHA-256 `c72b60b015dd942cce3a5004d34448588909f522aede3b71089b29e3747d3af3`.
 The public root commit differs from `350e0d6` only by dropping agent guidance,
