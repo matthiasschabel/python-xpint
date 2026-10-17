@@ -4,6 +4,8 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+## [0.1.0b2] - 2026-10-17
+
 ### Changed
 
 - `m_as()` on a designated value requires a target carrying the same
