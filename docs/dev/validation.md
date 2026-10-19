@@ -1,7 +1,7 @@
 # Validation and regression evidence
 
 **Status:** Active
-**Last updated:** 2026-10-17
+**Last updated:** 2026-10-19
 **Scope:** Release validation results, the language-neutral conformance contract, and benchmark procedure.
 
 ## Context
@@ -26,6 +26,13 @@ them on the actual release commit; commands live in the
 | 0.1.0b2 | `44406f4` | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 843 passed, 0 skipped, 92% coverage; strict mypy, Twine, minimal install passed |
 | 0.1.0b2 | `44406f4` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
 | 0.1.0b2 | `44406f4` | macOS arm64 / 3.14.6 (free-threaded build) | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b3 | `2e7ee0f` | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 871 passed, 0 skipped, 91.91% coverage; strict mypy, Twine, minimal install passed |
+| 0.1.0b3 | `2e7ee0f` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b3 | `2e7ee0f` | macOS arm64 / 3.14.6 (free-threaded build, GIL disabled) | 0.25.3 / 2.5.2 | Same results |
+
+The three local 0.1.0b3 builds of `2e7ee0f` produced identical artifacts:
+`xpint-0.1.0b3-py3-none-any.whl` SHA-256 `92ad77e2f324ba02c855bc8cd1f416bd992cf26a5aab3c3c40959326639005a0`,
+`xpint-0.1.0b3.tar.gz` SHA-256 `9e8618a419aa3aab68d67a714678df81edd79044429c90a36e737ad740d32ec7`.
 
 The three local 0.1.0b2 builds of `44406f4` produced identical artifacts:
 `xpint-0.1.0b2-py3-none-any.whl` SHA-256 `b6ca5818f44a67859225fa64e4c5b371476e723705f2039961510f886eb472d0`,
