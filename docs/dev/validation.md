@@ -29,10 +29,16 @@ them on the actual release commit; commands live in the
 | 0.1.0b3 | `2e7ee0f` | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 871 passed, 0 skipped, 91.91% coverage; strict mypy, Twine, minimal install passed |
 | 0.1.0b3 | `2e7ee0f` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
 | 0.1.0b3 | `2e7ee0f` | macOS arm64 / 3.14.6 (free-threaded build, GIL disabled) | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b3 | `193dec0` | hosted Ubuntu / 3.12, 3.13, 3.14 | 0.25.3 / locked | `ci.yml` run 39309970283: 871 passed per job |
+| 0.1.0b3 | `193dec0` (tag `v0.1.0b3`) | hosted Ubuntu / 3.12.15, 3.13.16, 3.14.8 | 0.25.3 / locked | `publish.yml` run 39311796932, installed wheel: 871 passed per job; minimal install passed |
+| 0.1.0b3 | PyPI upload | macOS arm64 / 3.12.12, 3.13.14, 3.14.6 (free-threaded) | 0.25.3 / — | Fresh no-cache `pip install xpint==0.1.0b3` from PyPI outside any checkout; minimal install passed |
 
 The three local 0.1.0b3 builds of `2e7ee0f` produced identical artifacts:
 `xpint-0.1.0b3-py3-none-any.whl` SHA-256 `92ad77e2f324ba02c855bc8cd1f416bd992cf26a5aab3c3c40959326639005a0`,
 `xpint-0.1.0b3.tar.gz` SHA-256 `9e8618a419aa3aab68d67a714678df81edd79044429c90a36e737ad740d32ec7`.
+`193dec0` differs from `2e7ee0f` only in maintainer docs, which neither artifact
+contains; `publish.yml` run 39311796932 built the same two hashes from the tag.
+Published 2026-10-19 19:51 UTC from that run; PyPI's SHA-256 digests match.
 
 The three local 0.1.0b2 builds of `44406f4` produced identical artifacts:
 `xpint-0.1.0b2-py3-none-any.whl` SHA-256 `b6ca5818f44a67859225fa64e4c5b371476e723705f2039961510f886eb472d0`,
