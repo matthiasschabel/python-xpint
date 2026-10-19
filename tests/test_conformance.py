@@ -2,6 +2,7 @@
 
 import json
 import operator
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,22 @@ from xpint import SemanticQuantity, SemanticRegistry
 _FIXTURE = json.loads(
     (Path(__file__).parent / "fixtures" / "semantic_conformance.json").read_text(encoding="utf-8")
 )
+
+
+@pytest.mark.parametrize("case", _FIXTURE["parse_cases"], ids=lambda case: case["id"])
+def test_designated_parse_conformance(case: dict[str, Any]) -> None:
+    registry = SemanticRegistry()
+    expected = registry.Unit("")
+    for spec in case["factors"]:
+        factor = registry.Unit(spec["unit"])
+        if "designation" in spec:
+            factor = factor.with_designation(spec["designation"])
+        # Rational fixture exponents become floats, matching how Pint and xpint
+        # parse "(1/3)"; an exact Fraction power would build a different unit.
+        expected *= factor ** float(Fraction(spec["exponent"]))
+    assert registry.Unit(case["input"]) == expected
+    assert registry.Unit(str(expected)) == expected
+    assert registry.Unit(format(expected, "~")) == expected
 
 
 def _quantity(registry: SemanticRegistry, spec: dict[str, Any]) -> SemanticQuantity:

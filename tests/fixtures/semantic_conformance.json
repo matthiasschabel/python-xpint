@@ -79,5 +79,42 @@
       "right": {"magnitude": 3, "unit": "kelvin"},
       "expected": {"magnitude": 5, "unit": "kelvin", "kind": null, "role": "Generic", "designations": []}
     }
+  ],
+  "parse_cases": [
+    {
+      "id": "designated_concentration_slot",
+      "input": "mM[gadoteridol-Gd]",
+      "factors": [{"unit": "mM", "designation": "gadoteridol-Gd", "exponent": "1"}]
+    },
+    {
+      "id": "designated_concentration_factors",
+      "input": "mmol[O2]/L",
+      "factors": [{"unit": "mmol", "designation": "O2", "exponent": "1"}, {"unit": "L", "exponent": "-1"}]
+    },
+    {
+      "id": "designated_compartment_ratio",
+      "input": "mL[blood]/mL[tissue]",
+      "factors": [{"unit": "mL", "designation": "blood", "exponent": "1"}, {"unit": "mL", "designation": "tissue", "exponent": "-1"}]
+    },
+    {
+      "id": "designated_power",
+      "input": "m[cap]^2",
+      "factors": [{"unit": "m", "designation": "cap", "exponent": "2"}]
+    },
+    {
+      "id": "designated_rational_power",
+      "input": "m[cap]^(1/3)",
+      "factors": [{"unit": "m", "designation": "cap", "exponent": "1/3"}]
+    },
+    {
+      "id": "designation_opaque_operators",
+      "input": "mmol[blood plasma + O2/Fe]",
+      "factors": [{"unit": "mmol", "designation": "blood plasma + O2/Fe", "exponent": "1"}]
+    },
+    {
+      "id": "designation_escaped_delimiters",
+      "input": "m[a\\[b\\]\\\\c]",
+      "factors": [{"unit": "m", "designation": "a[b]\\c", "exponent": "1"}]
+    }
   ]
 }

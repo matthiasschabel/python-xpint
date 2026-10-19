@@ -79,7 +79,7 @@ ownership checks and guards against unit-blind `out` and `initial` handling.
 | Masked `filled` / `compressed` | Preserve classified metadata and, in angle mode, angular units; ordinary Pint behavior may return a bare array |
 | Dask `compute`, `persist`, `rechunk` | Preserve classified metadata; arbitrary classified `map_blocks` rejects |
 | xarray | Tested reductions, composition, indexing/transpose, Dask computation and multiplication by ordinary xpint units |
-| pint-xarray | Ordinary quantification with `force_ndarray_like=True`; designated text round trips unsupported |
+| pint-xarray | Ordinary quantification and designated DataArray unit-text round trips with `force_ndarray_like=True`; default/abbreviated formatting; no quantity-kind serialization |
 
 Supported reductions normalize positional/keyword options before validation.
 Bare scalar initials and masked fills are magnitudes in the existing semantic
@@ -101,6 +101,7 @@ transforms have no supported semantic contract.
 
 | Surface | Contract | Tests |
 | --- | --- | --- |
+| Native designated strings (unreleased) | Single-token labels in `Unit`, `Quantity`, the registry call, `parse_units`, `parse_expression`, `to`/`ito`/`m_as`/`to_compact` targets, and registry `convert`; other string entry points (`get_dimensionality`, `get_base_units`, `check`) reject them with Pint's `UndefinedUnitError`, and `unit == "mM[Fe]"` / `is_compatible_with` return `False`. Default/abbreviated unit text round-trips; powers parse with the registry's `non_int_type`, as in Pint. Operator syntax only after a label: Pint's word forms (`m[cap] squared`) are not supported | [registry](../tests/test_registry.py), [conformance](../tests/test_conformance.py), [pint-xarray](../tests/test_duck_arrays.py) |
 | Designated `str` / `format` / repr and rich display | Default and abbreviated text with numeric specs; unsupported unit specs reject; repr includes kind | [formatter](../tests/test_formatter.py), [designations](../tests/test_designations.py) |
 | Direct Pint formatter/Babel APIs | Designated inputs reject, including delegate formatters; magnitude formatting and ordinary text still delegate | [formatter](../tests/test_formatter.py) |
 | Pickle | All semantic registries can produce pickles; reconstruction uses the selected application registry for the pickle's angle mode, which must have matching definitions | [registry](../tests/test_registry.py), [kinds](../tests/test_kinds.py) |
@@ -111,8 +112,12 @@ transforms have no supported semantic contract.
 | `pi_theorem` / Matplotlib | Classified extraction rejects; ordinary physical behavior delegated; plotting import is lazy | [adapters](../tests/test_adapters.py) |
 
 Kind-only text retains Pint's formatting; repr exposes the kind. Fraction-valued
-physical unit exponents can fail in Pint 0.25 formatting; rational designation
-signatures do not eliminate that upstream limitation. Optional uncertainties,
+physical unit exponents can fail in Pint 0.25 formatting, including quantity
+`repr()`; designated unit `str()`/`format(unit, "~")` use xpint's formatter and
+round-trip through `Unit`. Powers parse as floats, as in Pint's own parser, so a
+unit built with a non-dyadic `Fraction` power parses back with the float power and
+compares unequal to its source. Rational designation signatures do not eliminate
+the other upstream formatting limitations. Optional uncertainties,
 Babel, plotting and array packages are test/development dependencies, not direct
 runtime requirements. Pint is the only direct runtime dependency.
 

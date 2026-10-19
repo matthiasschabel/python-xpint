@@ -136,6 +136,23 @@ def test_pint_xarray_quantifies_plain_units_with_configured_registry() -> None:
     assert quantified.data.units == registry.meter
 
 
+@pytest.mark.parametrize("label", ["mM[gadoteridol-Gd]", r"mmol[O2\[blood\]]/L"])
+@pytest.mark.parametrize("unit_format", ["", "~"])
+def test_pint_xarray_designated_text_round_trip(label: str, unit_format: str) -> None:
+    registry = SemanticRegistry(force_ndarray_like=True)
+    values = np.array([1.0, 2.0], dtype=np.float64)
+    data = xr.DataArray(values, dims="sample", attrs={"units": label})
+    quantified = data.pint.quantify(unit_registry=registry)
+    assert quantified.data.units == registry.Unit(label)
+    exported = quantified.pint.dequantify(format=unit_format)
+    restored = exported.pint.quantify(unit_registry=registry)
+    assert restored.data.units == quantified.data.units
+    assert restored.data.designation_signature == quantified.data.designation_signature
+    assert restored.dims == data.dims
+    assert restored.data.magnitude.dtype == values.dtype
+    np.testing.assert_allclose(restored.data.magnitude, values, rtol=0, atol=0)
+
+
 def test_classified_dask_metadata_is_readable() -> None:
     magnitude = dask_array.from_array(np.arange(6).reshape(2, 3), chunks=(1, 3))
     quantity = ureg.Quantity(magnitude, m["tissue"])

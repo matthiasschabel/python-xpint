@@ -129,8 +129,30 @@ unit, such as the substance in `mmol["O2"] / L`:
   because the registry declares that molar concentration designates its
   substance; otherwise write the factor form, `mmol["O2"] / L`.
 
-Designations are entered programmatically; there is no parser for strings such
-as `"mmol[O2]/L"` yet.
+Designations also work in unit strings (added in the unreleased version):
+
+```python
+ureg.Unit("mM[Fe]") == mM["Fe"]
+iron = ureg.Quantity(5, "mM[Fe]")  # also ureg("5 mM[Fe]")
+iron.m_as("mmol[Fe]/L")  # 5
+iron.to("mM[Gd]")  # TypeError: different factor designations
+ureg.Unit(str(mmol["O2"] / L)) == mmol["O2"] / L
+```
+
+Attach `[label]` immediately to one unit token: `m[cap]**2` labels `m` before
+the power; `(m**2)[cap]` and `m [cap]` are invalid. Labels are opaque and
+case-sensitive, including spaces, hyphens, digits, `+`, `*`, and `/`:
+`"mM[gadoteridol-Gd]"` and `"mL[blood plasma]"` work. Inside a label, escape
+backslashes and brackets as `\\`, `\[`, and `\]` (use Python raw strings when
+writing those escapes). No other escapes are accepted. Malformed or ineligible
+designations raise `ValueError` naming the input and zero-based character
+position. Both `str(unit)` and `format(unit, "~")` round-trip through `Unit`
+for compounds. Powers parse with the registry's `non_int_type` (float by
+default), as in Pint, so on a default registry a unit built with a `Fraction`
+power such as `Fraction(1, 3)` parses back with the float power. Use operator
+syntax after a label (`m[cap]**2`); Pint's word forms such as `squared` are not
+supported there. Pint dimensionality strings such as
+`"[length]"` still work in `get_dimensionality()` and definitions.
 
 ## Temperature roles
 
@@ -295,8 +317,10 @@ array partly updated. The staging covers NumPy arrays only. Classified quantitie
   `map_blocks()` raises because the callback could change values or dimensions.
 - xarray: reductions, concatenation, `where`, transpose and indexing, Dask-backed
   computation, and multiplication by xpint units are tested.
-- pint-xarray: ordinary units work with `SemanticRegistry(force_ndarray_like=True)`;
-  designated round trips need a designation parser and are unsupported.
+- pint-xarray: ordinary units and designated DataArray unit strings round-trip
+  through quantify/dequantify with `SemanticRegistry(force_ndarray_like=True)`
+  (designated strings require the unreleased version). Use default or `"~"`
+  formatting; this does not serialize quantity kinds.
 - pandas and arbitrary Dask graph transformations are not supported.
 
 ### Comparison and hashing

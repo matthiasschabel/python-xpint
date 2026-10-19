@@ -4,6 +4,27 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Native designated unit strings, including `"mM[Fe]"`, `"mmol[O2]/L"`, and
+  `"mL[blood]/mL[tissue]"`, in unit and quantity constructors, registry
+  expressions, `parse_units()`, and conversion targets (`to()`, `m_as()`, and
+  registry `convert()`). Labels attach to single tokens with the same rules as
+  `with_designation()`. Default and abbreviated designated unit text round-trip,
+  including escaped brackets/backslashes. Powers parse with the registry's
+  `non_int_type` and offsets follow `default_as_delta`, as in Pint's own parser,
+  so on a default registry a unit built with a `Fraction` power such as
+  `Fraction(1, 3)` parses back with the float power. Malformed labels
+  raise `ValueError` with input and position instead of being interpreted as units.
+- Designated pint-xarray DataArray unit strings round-trip through
+  quantify/dequantify using default or abbreviated formatting and a registry
+  configured with `force_ndarray_like=True`; quantity kinds are not serialized.
+
+### Fixed
+
+- Registry expressions such as `"5 mM[s]"` and `"5 m[g]"` now treat `s` and `g`
+  as designations, rather than silently multiplying by seconds or grams.
+
 ## [0.1.0b3] - 2026-10-19
 
 ### Added

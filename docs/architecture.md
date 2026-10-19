@@ -124,6 +124,79 @@ The implemented signature labels dimension contributions: `m["cap"]**2` and
 whole geometric measures is an [open design question](dev/future_work.md#open-design-questions),
 not silently resolved by this consolidation.
 
+#### Native designated strings
+
+The unreleased parser accepts `registered-token[label]` before a token's power.
+The bracket must immediately follow the token; groups and numbers cannot receive
+labels. Labels are opaque and case-sensitive, with only `\\`, `\[`, and `\]`
+escapes. Empty labels, unescaped nested brackets, bad escapes, and misplaced or
+unclosed brackets raise built-in `ValueError` with the original input and a
+zero-based character position. Ineligible tokens reuse `with_designation()`'s
+message, with source location added. Unknown designated tokens also raise
+`ValueError`, chaining Pint's lookup error; ordinary unknown units retain Pint's
+errors. These are invalid argument values, not definition-file syntax errors,
+so no new exception class or `DefinitionSyntaxError` contract is introduced.
+
+The Pint 0.25.3 spike established two parsing boundaries, `parse_units()` and
+`parse_expression()`. A small lexical pass lifts each designated token into a
+unique alphabetic placeholder before Pint preprocessors or tokenization can
+rewrite its label. Each token resolves through Pint (including prefixes,
+plurals, case options, and aliases) and receives `with_designation()` before
+any power or cancellation. No units or auxiliary dimensions are registered.
+
+- Unit parsing uses Pint's `ParserHelper` for products, division, and powers,
+  with Pint's float exponents (see exponent identity below).
+  Parsed factors are reconstructed with the existing designation algebra;
+  physical units stay separate from semantic factors even when they cancel.
+  Compound offset-to-delta normalization follows Pint's `as_delta` rule.
+- Expression parsing injects designated quantities through Pint's existing
+  `**values` mechanism and delegates arithmetic to Pint/xpint. Expression
+  magnitudes and numeric exponents retain Pint's numeric behavior.
+- Pint's `Unit(str)` and `Quantity(value, str)` constructors copy only physical
+  containers from parsed units. xpint resolves bracket-bearing strings before
+  entering those constructors, so its existing factor inheritance applies.
+  The one-string Quantity constructor likewise preserves the parsed quantity.
+  `to()`/`m_as()` resolve designated strings before `to_units_container()` can
+  erase labels; registry `convert()` promotes designated strings to semantic
+  unit objects before its existing policy checks.
+
+Undesignated calls delegate unchanged. Dimensionality strings and definition
+files keep Pint's independent dimension parser; `[length]` is not interpreted
+as a designation there. Labels and resolved units are call-local. They never
+enter Pint's `parse_unit` cache or xpint's physical factor cache. `ParserHelper`'s
+shared cache contains only placeholder syntax and numeric exponents, keyed by
+numeric type; each parse supplies its own label map and owning registry. This
+also isolates default and angle-dimension registries and repeated parses with
+different labels. Placeholder prefixes avoid names present in the input.
+
+Rejected boundaries: a registry preprocessor alone cannot transport semantic
+factors and would expose dimension syntax to designation handling. Overriding
+the container parser (`parse_units_as_container` / its private implementation)
+alone would lose metadata at its return boundary. Replacing Pint's tokenizer or
+evaluation tree is unnecessary; registering placeholder units would mutate
+definitions and contaminate caches. The spike also reproduced two Pint quirks:
+`parse_expression("mM[s]")` silently multiplies by seconds without this pass,
+and ordinary rational parsing produces floating exponents. Fraction-valued
+physical exponents can still fail in Pint's quantity `repr()`; this existing
+formatting limitation is outside the unit-string round-trip contract.
+
+**Exponent identity:** `m["cap"] ** 0.1` and `m["cap"] ** Fraction(1, 10)` both
+format as `meter[cap] ** (1/10)`, but their physical Pint unit containers compare
+unequal. The parser evaluates `(1/10)` with the registry's `non_int_type`, as
+Pint's own parser does (float by default), so a float power round-trips when it
+equals Python's evaluation of the rational xpint prints for it: `1/3`, `2/7` and
+`0.1` do; `0.1 + 0.2`, printed as `(3/10)`, does not. A unit built with a
+non-dyadic `Fraction` power on a float registry parses back with the float power.
+Making those equal would need exponent normalization or a change to unit
+equality, which is out of scope here.
+
+The shared semantic fixture now includes additive `parse_cases`, expressed as
+input strings and programmatic factor/exponent expectations. Its Python consumer
+checks them; a MATLAB consumer remains future work. Narrow pint-xarray DataArray
+quantify/dequantify tests cover designated unit text, including escapes and both
+supported formats. They do not establish kind serialization or broad Dataset
+metadata interchange.
+
 ### Thermodynamic temperature
 
 Roles are Absolute, Delta, and Generic. Offset scales and their delta partners

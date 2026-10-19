@@ -29,7 +29,7 @@ from pint.errors import DimensionalityError
 from pint.facets.measurement import Measurement
 from pint.facets.nonmultiplicative.definitions import OffsetConverter
 from pint.facets.plain.definitions import UnitDefinition
-from pint.util import UnitsContainer, to_units_container
+from pint.util import ParserHelper, UnitsContainer, to_units_container
 
 from ._formatter import _SemanticFormatter
 from ._measurement import _SemanticMeasurement
@@ -57,6 +57,7 @@ from .designations import (
     DesignationSignature,
     DesignationTerm,
     _as_fraction,
+    _lift_designations,
     _SemanticFactors,
     canonical_factors,
     combine_factors,
@@ -157,6 +158,11 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         registry = cast(SemanticRegistry, cls._REGISTRY)
         registry._require_owned(value, name="value")
         registry._require_owned(units, name="units")
+
+        if isinstance(units, str) and ("[" in units or "]" in units):
+            units = registry.parse_units(units)
+        if units is None and isinstance(value, str) and ("[" in value or "]" in value):
+            value = registry.parse_expression(value)
 
         source = value
         if isinstance(value, SemanticQuantity) and units is not None:
@@ -1044,6 +1050,8 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         # The target exactly as the caller wrote it, before any designation adoption.
         registry = cast(SemanticRegistry, self._REGISTRY)
         registry._require_owned(other, name="target units")
+        if isinstance(other, str) and ("[" in other or "]" in other):
+            return registry.parse_units(other)
         target_container = (
             self.UnitsContainer()
             if other is None
@@ -1172,8 +1180,8 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             raise TypeError(
                 f"m_as() needs a target that carries the designations of {self.units}; "
                 "a plain target would extract a number without checking them. Pass a unit "
-                "object with the same designations, such as mmol['O2'] / L, or call "
-                "as_undesignated() first to drop them deliberately."
+                "string or object with the same designations, such as 'mmol[O2]/L' or "
+                "mmol['O2'] / L, or call as_undesignated() first to drop them deliberately."
             )
         return self.to(units).magnitude
 
@@ -2198,6 +2206,8 @@ class SemanticUnit(pint.UnitRegistry.Unit):
     ) -> None:
         registry = cast(SemanticRegistry, self._REGISTRY)
         registry._require_owned(units, name="units")
+        if isinstance(units, str) and ("[" in units or "]" in units):
+            units = registry.parse_units(units)
         super().__init__(units)
         inherited_factors = getattr(units, "_semantic_factors", None)
         if inherited_factors is not None:
@@ -2857,17 +2867,91 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
 
         _setup_matplotlib(self, enable)
 
+    def _designated_tokens(
+        self, input_string: str, case_sensitive: bool | None
+    ) -> tuple[str, dict[str, SemanticUnit]]:
+        lifted, labels = _lift_designations(input_string)
+        units = {}
+        for placeholder, (token, label, position) in labels.items():
+            try:
+                unit = super().parse_units(token, as_delta=False, case_sensitive=case_sensitive)
+                units[placeholder] = unit.with_designation(label)
+            except (ValueError, pint.errors.UndefinedUnitError) as exc:
+                message = str(exc).rstrip(".")
+                raise ValueError(f"{message} at position {position} in {input_string!r}") from exc
+        return lifted, units
+
+    @override
+    def parse_units(
+        self,
+        input_string: str,
+        as_delta: bool | None = None,
+        case_sensitive: bool | None = None,
+    ) -> SemanticUnit:
+        """Parse units, including opaque designations on individual unit tokens.
+
+        Labels attach before powers and use the same slots as ``with_designation``.
+        Undesignated expressions retain Pint's parsing behavior.
+
+        Raises:
+            ValueError: If designation syntax or its factor is invalid. Messages
+                include the input and a zero-based character position.
+        """
+        if "[" not in input_string and "]" not in input_string:
+            return super().parse_units(input_string, as_delta, case_sensitive)
+        if as_delta is None:
+            as_delta = self.default_as_delta
+        lifted, designated = self._designated_tokens(input_string, case_sensitive)
+        for preprocessor in self.preprocessors:
+            lifted = preprocessor(lifted)
+        # The registry's exponent type, as in Pint's own parser (float by default):
+        # format_factors prints a float power 1/3 as "(1/3)", which evaluates back
+        # to the same double. ParserHelper caches syntax only; label/registry state
+        # stays local.
+        parsed = ParserHelper.from_string(lifted, self.non_int_type)
+        if parsed.scale != 1:
+            raise ValueError(f"unit expression cannot have a scaling factor: {input_string!r}")
+        physical = self.UnitsContainer()
+        factors: _SemanticFactors = ()
+        for name, exponent in parsed.items():
+            unit = designated.get(name)
+            if unit is None:
+                unit = super().parse_units(name, as_delta=False, case_sensitive=case_sensitive)
+            container = unit._units
+            # Match Pint's compound-offset rule without passing placeholders into
+            # its registry cache. Designated absolute temperatures already reject.
+            if as_delta and (len(parsed) > 1 or exponent != 1):
+                container = self.UnitsContainer(
+                    {
+                        key if self._units[key].is_multiplicative else "delta_" + key: power
+                        for key, power in container.items()
+                    }
+                )
+            physical *= container**exponent
+            factor_units = (
+                unit._semantic_factors
+                if container == unit._units
+                else self._factors_for_units(container)
+            )
+            factors = combine_factors(factors, power_factors(factor_units, exponent))
+        return self.Unit._from_parts(physical, semantic_factors=factors)
+
     @override
     def parse_expression(
         self, input_string: str, case_sensitive: bool | None = None, **values: Any
     ) -> Any:
-        """Parse a Pint expression, explaining offset-temperature construction.
+        """Parse a Pint expression with optional factor designations.
 
         Raises:
+            ValueError: If a designation is malformed or its factor is ineligible;
+                includes the input and zero-based character position.
             TypeError: If parsing multiplies an absolute temperature by a magnitude;
                 use ``Quantity(20, "degC")`` or ``20 * degC`` instead.
         """
         try:
+            if "[" in input_string or "]" in input_string:
+                input_string, designated = self._designated_tokens(input_string, case_sensitive)
+                values = {**values, **{name: self.Quantity(1, u) for name, u in designated.items()}}
             return super().parse_expression(input_string, case_sensitive, **values)
         except TypeError as exc:
             if "absolute temperatures cannot participate in multiplication or division" not in str(
@@ -2887,9 +2971,9 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
     ) -> Any:
         """Convert magnitudes while validating semantic unit-object inputs.
 
-        Semantic source/target objects obey quantity conversion rules. When both
-        source and target are strings or containers, conversion is explicitly
-        physical and skips affine/metadata policy.
+        Semantic objects and designated strings obey quantity conversion rules.
+        When both source and target are plain strings or containers, conversion
+        is explicitly physical and skips affine/metadata policy.
         Quantity source/target magnitudes are ignored, as in Pint. A source kind
         constrains result dimensions; a target quantity supplies its units and
         designations, not a replacement kind, just as in ``Quantity.to()``.
@@ -2907,6 +2991,10 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
             return super().convert(value, src, dst, inplace, **ctx_kwargs)
         self._require_owned(src, name="source units")
         self._require_owned(dst, name="target units")
+        if isinstance(src, str) and ("[" in src or "]" in src):
+            src = self.parse_units(src)
+        if isinstance(dst, str) and ("[" in dst or "]" in dst):
+            dst = self.parse_units(dst)
         if (
             not inplace
             and isinstance(src, SemanticUnit)

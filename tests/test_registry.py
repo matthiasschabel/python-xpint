@@ -1,6 +1,9 @@
 """Semantic registry ownership and kind-catalog tests."""
 
 import operator
+import pickle
+import re
+from fractions import Fraction
 from typing import Any
 
 import numpy as np
@@ -8,8 +11,236 @@ import pint
 import pytest
 from pint.errors import UndefinedUnitError
 
-from xpint import AffineRole, SemanticRegistry, get_default_registry
+from xpint import AffineRole, SemanticRegistry, SemanticUnit, get_default_registry
 from xpint.units import J, m, s, ureg
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("mM[Fe]", ureg.mM["Fe"]),
+        ("mmol[O2]/L", ureg.mmol["O2"] / ureg.L),
+        ("micromoles[O2]", ureg.micromole["O2"]),
+        ("µmol[O2]", ureg.micromole["O2"]),
+        ("m[cap] * s[clock]", m["cap"] * s["clock"]),
+        ("mL[blood]/mL[tissue]", ureg.mL["blood"] / ureg.mL["tissue"]),
+        ("m[cap]**2", m["cap"] ** 2),
+        ("m[cap]**(1/2)", m["cap"] ** 0.5),
+        ("m[cap]**(-2/3)", m["cap"] ** (-2 / 3)),
+        ("m[cap]**(1/10)", m["cap"] ** 0.1),
+        ("mM[s]", ureg.mM["s"]),
+        ("m[g]", m["g"]),
+        ("m[cap]/m[cap]", ureg.dimensionless),
+        ("m[cap]**0", ureg.dimensionless),
+        ("m[cap]/(s[clock]*kg[weight])", m["cap"] / (s["clock"] * ureg.kg["weight"])),
+    ],
+)
+def test_designated_unit_strings(text: str, expected: SemanticUnit) -> None:
+    assert ureg.Unit(text) == expected
+    assert ureg.parse_units(text) == expected
+    assert ureg.Quantity(5, text).units == expected
+
+
+@pytest.mark.parametrize(
+    "label",
+    [
+        "Fe",
+        "O2",
+        "F18",
+        "blood",
+        "blood plasma",
+        "gadoteridol-Gd",
+        "ferumoxytol-Fe",
+        "Fe+2 * O2 / blood",
+        r"a[b]\c",
+        " per ",
+        " ",
+        "a,b^2",
+        "µM °C",
+        "x\ny",
+    ],
+)
+def test_designated_formatter_strings_round_trip(label: str) -> None:
+    # Generated products, reciprocals, and float powers that print as rationals
+    # exercise retained physical units and designations after cancellation.
+    bases = [m[label], ureg.mM[label], ureg.mL[label] / ureg.mL["reference"]]
+    for base in bases:
+        for power in [1, 2, -1, 1 / 3, 2 / 7, 0.1]:
+            for unit in [base**power, base**power / (s["clock"] * ureg.kg)]:
+                for text in [str(unit), format(unit, "~")]:
+                    parsed = ureg.Unit(text)
+                    assert parsed == unit
+                    assert parsed.designation_signature == unit.designation_signature
+
+
+@pytest.mark.parametrize("text", ["5 mM[Fe]", "5mM[Fe]", "5 * mM[Fe]"])
+def test_designated_quantity_expressions(text: str) -> None:
+    expected = ureg.Quantity(5, ureg.mM["Fe"])
+    assert ureg(text) == expected
+    assert ureg.parse_expression(text) == expected
+    assert ureg.Quantity(text) == expected
+
+
+def test_designated_expression_values_and_opaque_labels() -> None:
+    text = "scale * mM[gadoteridol-Gd + O2 / blood]"
+    expected = ureg.Quantity(5, ureg.mM["gadoteridol-Gd + O2 / blood"])
+    assert ureg(text, scale=5) == expected
+    assert ureg("5 mM[s]").units == ureg.mM["s"]
+    assert ureg("5 m[g]").units == m["g"]
+
+
+def test_designated_string_conversion_targets() -> None:
+    quantity = ureg.Quantity(5, "mM[Fe]")
+    expected = ureg.Quantity(0.005, ureg.mol["Fe"] / ureg.L)
+    assert quantity.to("mol[Fe]/L").units == expected.units
+    # Unit-prefix conversion is exact in theory; allow floating scaling roundoff.
+    assert quantity.m_as("mol[Fe]/L") == pytest.approx(0.005, rel=1e-15, abs=0)
+    assert ureg.Quantity(quantity, "mol[Fe]/L") == expected
+    assert ureg.convert(5, "mM[Fe]", "mol[Fe]/L") == pytest.approx(0.005, rel=1e-15, abs=0)
+    assert ureg.convert(5, ureg.mM["Fe"], "mol[Fe]/L") == pytest.approx(0.005, rel=1e-15, abs=0)
+    quantity.ito("mol[Fe]/L")
+    assert quantity == expected
+
+
+@pytest.mark.parametrize("operation", ["to", "m_as", "constructor", "convert"])
+def test_designated_string_conversion_mismatch(operation: str) -> None:
+    quantity = ureg.Quantity(1, "mM[Fe]")
+    with pytest.raises(TypeError, match="different factor designations"):
+        if operation == "constructor":
+            ureg.Quantity(quantity, "mM[Gd]")
+        elif operation == "convert":
+            ureg.convert(1, "mM[Fe]", "mM[Gd]")
+        else:
+            getattr(quantity, operation)("mM[Gd]")
+
+
+@pytest.mark.parametrize("entry", ["Unit", "Quantity", "parse_units", "parse_expression"])
+@pytest.mark.parametrize(
+    ("text", "position", "message"),
+    [
+        ("m[Fe", 1, "unclosed designation"),
+        ("m[]", 1, "must not be empty"),
+        ("m[Fe\\", 4, "dangling designation escape"),
+        (r"m[Fe\q]", 4, "unknown designation escape"),
+        ("m[Fe[ion]", 4, "escape '['"),
+        ("[Fe]", 0, "immediately follow a unit token"),
+        ("m [Fe]", 2, "immediately follow a unit token"),
+        ("(m)[Fe]", 3, "immediately follow a unit token"),
+        ("5[Fe]", 1, "immediately follow a unit token"),
+        ("1e3[Fe]", 3, "immediately follow a unit token"),
+        ("m**2[Fe]", 4, "immediately follow a unit token"),
+        ("m[Fe][Gd]", 5, "immediately follow a unit token"),
+        ("m[Fe]]", 5, "immediately follow a unit token"),
+        ("degC[Fe]", 4, "absolute temperature units cannot carry factor designations"),
+        ("°C[Fe]", 2, "absolute temperature units cannot carry factor designations"),
+        ("J[Fe]", 1, "physical dimensions and no declared designation slot"),
+        ("dimensionless[Fe]", 13, "requires one unit factor"),
+        ("undefined_unit[Fe]", 14, "not defined in the unit registry"),
+    ],
+)
+def test_designated_string_errors(entry: str, text: str, position: int, message: str) -> None:
+    with pytest.raises(ValueError, match=re.escape(message)) as error:
+        if entry == "Quantity":
+            ureg.Quantity(1, text)
+        else:
+            getattr(ureg, entry)(text)
+    assert f"position {position}" in str(error.value)
+    assert ". at position" not in str(error.value)
+    assert repr(text) in str(error.value)
+
+
+def test_designated_unit_string_rejects_scaling() -> None:
+    with pytest.raises(ValueError, match="cannot have a scaling factor") as error:
+        ureg.Unit("5 m[Fe]")
+    assert repr("5 m[Fe]") in str(error.value)
+
+
+def test_designated_parsing_follows_registry_non_int_type() -> None:
+    exact = SemanticRegistry(non_int_type=Fraction)
+    assert exact.Unit("m[cap]**(1/3)")._units == exact.Unit("m**(1/3)")._units
+    assert exact.Unit("m[cap]**(1/3)") == exact.m["cap"] ** Fraction(1, 3)
+
+
+def test_designated_parsing_follows_registry_default_as_delta() -> None:
+    plain_offsets = SemanticRegistry(default_as_delta=False)
+    assert plain_offsets.Unit("m[a]*degC")._units == plain_offsets.Unit("m*degC")._units
+    assert ureg.Unit("m[a]*degC")._units == ureg.Unit("m*degC")._units
+
+
+def test_plain_source_refuses_designated_string_target() -> None:
+    with pytest.raises(TypeError, match="different factor designations"):
+        ureg.Quantity(5, "mM").to("mM[Fe]")
+
+
+def test_m_as_plain_target_advice_names_string_form() -> None:
+    with pytest.raises(TypeError, match=re.escape("'mmol[O2]/L'")):
+        ureg.Quantity(5, "mM[Fe]").m_as("mM")
+
+
+@pytest.mark.parametrize(
+    "call",
+    [
+        lambda: ureg.get_dimensionality("mM[Fe]"),
+        lambda: ureg.get_base_units("mM[Fe]"),
+        lambda: ureg.Quantity(5, "mM[Fe]").check("mM[Fe]"),
+    ],
+)
+def test_unsupported_string_entry_points_reject_designations(call: Any) -> None:
+    # Outside the documented entry points Pint's own parser sees the brackets
+    # and refuses the string rather than misreading the label.
+    with pytest.raises(UndefinedUnitError):
+        call()
+
+
+def test_designated_parsing_keeps_registries_and_plain_caches_independent() -> None:
+    plain = SemanticRegistry()
+    angular = SemanticRegistry(angle_dimension=True)
+    for registry in [plain, angular, plain, angular]:
+        for label in ["Fe", "Gd", "Fe"]:
+            assert registry.Unit("mM") == registry.mM
+            assert registry.Unit(f"mM[{label}]") == registry.mM[label]
+            assert registry("mM").units == registry.mM
+        assert registry.Unit("mM[Fe]") != registry.Unit("mM[fe]")
+    with pytest.raises(ValueError, match="no declared designation slot"):
+        plain.Unit("rad[arc]")
+    assert angular.Unit("rad[arc]") == angular.radian["arc"]
+    plain.define("xpintdesignation = meter")
+    assert (
+        plain.Unit("xpintdesignation * m[cap]")
+        == plain.Unit("xpintdesignation") * plain.meter["cap"]
+    )
+
+
+def test_designated_parser_preserves_case_options_and_definition_dimensions() -> None:
+    registry = SemanticRegistry()
+    assert registry.parse_units("METER[Fe]", case_sensitive=False) == registry.meter["Fe"]
+    assert (
+        registry.parse_expression("5 METER[Fe]", case_sensitive=False).units == registry.meter["Fe"]
+    )
+    assert registry.get_dimensionality("[length]") == registry.meter.dimensionality
+    assert (
+        registry.get_dimensionality("[length] / [time]")
+        == (registry.meter / registry.second).dimensionality
+    )
+    registry.load_definitions(["widget = [widget_dimension]", "pair = 2 widget"])
+    assert registry.Unit("pair[item]") == registry.pair["item"]
+    assert registry.get_dimensionality("[widget_dimension]") == registry.widget.dimensionality
+    assert registry.Unit("m / s ** 2") == registry.meter / registry.second**2
+    assert registry("5 kg*m/s**2") == registry.Quantity(5, "newton")
+
+
+def test_designated_parser_preserves_compound_offset_option() -> None:
+    assert ureg.parse_units("m[a] * degC") == m["a"] * ureg.delta_degC
+    assert ureg.parse_units("m[a] * degC", as_delta=False).as_undesignated() == ureg.parse_units(
+        "m * degC", as_delta=False
+    )
+
+
+def test_parsed_designated_values_pickle_round_trip() -> None:
+    unit = ureg.Unit(r"mmol[O2\[blood\]\\sample]/L")
+    quantity = ureg.Quantity(5, str(unit))
+    assert pickle.loads(pickle.dumps(unit)) == unit
+    assert pickle.loads(pickle.dumps(quantity)) == quantity
 
 
 @pytest.mark.parametrize("quantity", [False, True])

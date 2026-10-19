@@ -1,7 +1,7 @@
 # Unsupported behavior and future work
 
 **Status:** Deferred
-**Last updated:** 2026-10-15
+**Last updated:** 2026-10-19
 **Scope:** xpint features outside the prepared beta contract and unresolved design choices.
 
 ## Context
@@ -21,18 +21,23 @@ Keep `pint>=0.25.3,<0.26` until a new compatibility matrix supports expansion.
 
 | Area | Current boundary | Prerequisite for extending it |
 | --- | --- | --- |
-| Native designated strings | Programmatic factor syntax only; no bracket-expression parser | Define grammar, escaping, canonical spelling, error cases, and round-trip tests |
+| Exponent identity | Designated strings parse powers as floats, as Pint does; a unit built with a non-dyadic `Fraction` power formats identically but parses back unequal | Normalize physical exponents or change unit equality |
 | Formatting | Designated default/abbreviated text and xpint rich display; direct Pint/Babel formatting rejects designations | Explicit format-specific preservation rules, including rational physical exponents that Pint 0.25 cannot format |
 | Group/root designations | Factor contributions only | Resolve scope and algebra separately from parser syntax |
 | Measurement containers | Classified Measurement operands/targets reject; explicit Quantity construction can carry an uncertainty magnitude | Design propagation and serialization across Pint's separate Measurement hierarchy; sequence/container behavior needs its own contract |
 | Discrete and broader NumPy arithmetic | Classified floor division, modulo, divmod, dot/prod and undefined dispatch reject | Define result kinds, designation algebra, affine rules, reductions and mutation before expanding allowlists |
 | Scientific adapters | Bounded Dask/xarray/masked-array support; no broad pandas/JAX or arbitrary graph-transform claim | Backend-specific tests that check shape, dtype, laziness, ownership, and preserve/drop/reject behavior |
-| pint-xarray round trips | Ordinary quantification works; designated text round trips unsupported | Native designation parser and metadata round trips |
+| pint-xarray metadata round trips | Ordinary and designated DataArray unit text round-trip; kinds are not serialized | Define an explicit kind-metadata schema and test broader Dataset/coordinate workflows before claiming general semantic interchange |
 | Cross-language parity | JSON fixture has an xpint consumer only | Implement and run a MATLAB consumer and record versioned results from both libraries |
 | Durable interchange | Python pickle requires compatible caller-owned registry definitions | Versioned schema and explicit registry/definition identity; consider external vocabulary mappings before claiming interoperability |
 | Semantic vocabulary | No chemistry identity resolution, molar-mass inference, ontology lookup, or UCUM certification | Concrete use case; evaluate an existing UCUM bridge instead of replacing Pint's definition language |
 | Other affine domains | Strict policy is thermodynamic-temperature only | Separate design for gauge pressure or other origins; do not infer it from temperature rules |
 | Angle configuration | Stock definitions at construction; no supported custom contexts or runtime mode toggle | Consistent cache, catalog, conversion, and definition-compatibility model |
+
+Native designated token strings are implemented in the unreleased version;
+universal exponent round-trip identity remains blocked as noted above. The
+grammar, Pint extension boundary, and cache isolation are recorded in
+[architecture](../architecture.md#native-designated-strings).
 
 ### Classified NumPy coverage
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, replace
 from fractions import Fraction
 from typing import Any
@@ -38,6 +39,67 @@ class _SemanticFactor:
 
 type DesignationSignature = tuple[DesignationTerm, ...]
 type _SemanticFactors = tuple[_SemanticFactor, ...]
+
+
+_DESIGNATION_TOKEN = re.compile(
+    r"(?P<number>(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)"
+    r"|(?P<unit>[^\W\d][\w°]*|°\w*|[%‰])|(?P<other>.)",
+    re.DOTALL,
+)
+
+
+def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str, int]]]:
+    """Protect opaque labels before Pint's preprocessors and tokenizer see them."""
+    # Use alphabetic placeholders: Pint rewrites digits adjacent to names. Never
+    # register them, and avoid names already present in this particular input.
+    prefix = "xpintdesignation"
+    while prefix in input_string:
+        prefix += "x"
+    lifted: list[str] = []
+    designations: dict[str, tuple[str, str, int]] = {}
+    position = 0
+
+    def invalid(message: str, at: int) -> ValueError:
+        return ValueError(f"{message} at position {at} in {input_string!r}")
+
+    while position < len(input_string):
+        token = _DESIGNATION_TOKEN.match(input_string, position)
+        assert token is not None
+        text = token.group()
+        position = token.end()
+        if text in ("[", "]"):
+            raise invalid(
+                "designation brackets must immediately follow a unit token", token.start()
+            )
+        if token.lastgroup != "unit" or input_string[position : position + 1] != "[":
+            lifted.append(text)
+            continue
+        opening = position
+        position += 1
+        label: list[str] = []
+        while position < len(input_string) and input_string[position] != "]":
+            char = input_string[position]
+            if char == "\\":
+                if position + 1 == len(input_string):
+                    raise invalid("dangling designation escape; use \\\\, \\[ or \\]", position)
+                if input_string[position + 1] not in "\\[]":
+                    raise invalid("unknown designation escape; use \\\\, \\[ or \\]", position)
+                position += 1
+                char = input_string[position]
+            elif char == "[":
+                raise invalid("escape '[' inside a designation as \\[", position)
+            label.append(char)
+            position += 1
+        if position == len(input_string):
+            raise invalid("unclosed designation '['; add ']'", opening)
+        if not label:
+            raise invalid("designation must not be empty", opening)
+        position += 1
+        placeholder = prefix + "x" * len(designations)
+        designations[placeholder] = (text, "".join(label), opening)
+        # Separators prevent a following token from joining the placeholder.
+        lifted.append(f"({placeholder})")
+    return "".join(lifted), designations
 
 
 def _as_fraction(value: Any) -> Fraction:
