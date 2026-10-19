@@ -186,7 +186,8 @@ torque = 5 * u.J / u.rad  # not interchangeable with energy
 
 Rotational quantities then take their conjugate forms (`joule / radian` for
 torque), and leaving the angle world is explicit: extract a magnitude with
-`theta.m_as("radian")`, or multiply by `eta = 1 / u.radian`. Pint's constants
+`theta.m_as("radian")`, or multiply by `eta = 1 / u.radian`. `float()` and
+`np.asarray()` refuse a value carrying an angle rather than strip it. Pint's constants
 carry no angle dimension, so formulas such as `hbar * omega` need one `eta`. The
 mode is fixed when the registry is created, and values from angle and ordinary
 registries cannot be mixed. See

@@ -2,11 +2,11 @@
 
 import logging
 import re
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import pytest
-from pint.errors import DimensionalityError, RedefinitionError
+from pint.errors import DimensionalityError, RedefinitionError, UnitStrippedWarning
 
 from xpint import AffineRole, SemanticQuantity, SemanticRegistry
 from xpint.units import ureg as default_ureg
@@ -247,6 +247,43 @@ def test_float_names_the_escape_hatches(angle_registry: SemanticRegistry) -> Non
         int(angle_registry.Quantity(90.0, "degree"))
     with pytest.raises(DimensionalityError, match=r"an angle is not a number"):
         complex(angle_registry.Quantity(90.0, "degree"))
+
+
+@pytest.mark.parametrize("convert", [np.asarray, np.array], ids=["asarray", "array"])
+@pytest.mark.parametrize(
+    ("magnitude", "unit"),
+    [(90.0, "degree"), ([1.0, 2.0], "radian"), ([[1.0]], "radian * meter")],
+    ids=["scalar", "vector", "mixed"],
+)
+def test_ndarray_conversion_refuses_an_angle_as_float_does(
+    angle_registry: SemanticRegistry, convert: Any, magnitude: Any, unit: str
+) -> None:
+    """Pint would strip the angle with only a warning, so the guard must cover arrays too."""
+
+    angle = angle_registry.Quantity(np.asarray(magnitude), unit)
+
+    with pytest.raises(DimensionalityError, match=r"so numpy\.asarray\(\) cannot choose"):
+        convert(angle)
+
+
+def test_ndarray_conversion_of_a_non_angle_keeps_pints_stripping(
+    angle_registry: SemanticRegistry,
+) -> None:
+    """Only the angle guard is new; ordinary units keep Pint's strip-with-warning."""
+
+    with pytest.warns(UnitStrippedWarning):
+        result = np.asarray(angle_registry.Quantity(np.array([1.0, 2.0]), "joule"))
+
+    np.testing.assert_array_equal(result, [1.0, 2.0])
+
+
+def test_ndarray_conversion_of_a_default_registry_angle_is_unchanged() -> None:
+    """Without angle dimensions radian is dimensionless, as in Pint."""
+
+    with pytest.warns(UnitStrippedWarning):
+        result = np.asarray(default_ureg.Quantity(np.array([1.0, 2.0]), "radian"))
+
+    np.testing.assert_array_equal(result, [1.0, 2.0])
 
 
 def test_complex_coercion_of_an_unclassified_number_still_delegates_to_pint() -> None:

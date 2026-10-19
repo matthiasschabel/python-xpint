@@ -1689,6 +1689,8 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 "cannot downcast a classified xpint quantity to ndarray because the array "
                 "cannot represent semantic metadata; operate on magnitude explicitly."
             )
+        # Pint would strip the angle with only a warning; refuse it as float() does.
+        self._reject_angle_coercion("numpy.asarray")
         result = super().__array__(dtype)
         if dtype is not None:
             converted = result.astype(dtype, copy=False)

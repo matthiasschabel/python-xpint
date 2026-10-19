@@ -4,6 +4,14 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- In an angle-dimension registry, `np.asarray()` and `np.array()` raise
+  `DimensionalityError` for a value carrying an angle, as `float()` already did.
+  Pint used to strip the angle with only a `UnitStrippedWarning`. Use
+  `m_as("radian")` or multiply by `1 / radian` first. Default registries and
+  non-angle units are unchanged.
+
 ### Added
 
 - The default registry defines a `MomentOfInertia` kind (`kilogram * meter ** 2`).
