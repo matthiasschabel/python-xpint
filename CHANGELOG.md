@@ -4,6 +4,8 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+## [0.1.0b3] - 2026-10-19
+
 ### Added
 
 - The default registry defines a `MomentOfInertia` kind (`kilogram * meter ** 2`).
