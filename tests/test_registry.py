@@ -1032,8 +1032,14 @@ with ThreadPoolExecutor(max_workers=8) as pool:
     registries = list(pool.map(first_use, range(8)))
 assert len({{id(registry) for registry in registries}}) == 1
 assert registries[0] is {getter}
+from xpint.units import ureg
+assert ureg is get_default_registry()
 """
     _run_fresh_interpreter(script)
+
+
+# Interpreter start plus building two registries takes about a second; allow ample margin.
+_FRESH_INTERPRETER_TIMEOUT_SECONDS = 60
 
 
 def _run_fresh_interpreter(script: str) -> None:
@@ -1045,6 +1051,8 @@ def _run_fresh_interpreter(script: str) -> None:
         capture_output=True,
         text=True,
         check=False,
+        # A locking regression would otherwise hang the suite instead of failing.
+        timeout=_FRESH_INTERPRETER_TIMEOUT_SECONDS,
     )
     assert result.returncode == 0, result.stderr
 

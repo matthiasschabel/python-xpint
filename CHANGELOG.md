@@ -35,7 +35,9 @@ All notable public changes to xpint are documented here.
 - `get_default_registry()` returns one registry even when several threads make
   the first call at once. It used to build one per racing thread when
   `xpint.units` had not been imported yet, and values made in the extra
-  registries could not be combined with later ones.
+  registries could not be combined with later ones. The function no longer
+  carries `functools.cache` attributes such as `cache_clear()`, which were never
+  documented and would have left `xpint.units` bound to a discarded registry.
 
 ### Deprecated
 
