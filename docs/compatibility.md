@@ -103,7 +103,7 @@ transforms have no supported semantic contract.
 | --- | --- | --- |
 | Designated `str` / `format` / repr and rich display | Default and abbreviated text with numeric specs; unsupported unit specs reject; repr includes kind | [formatter](../tests/test_formatter.py), [designations](../tests/test_designations.py) |
 | Direct Pint formatter/Babel APIs | Designated inputs reject, including delegate formatters; magnitude formatting and ordinary text still delegate | [formatter](../tests/test_formatter.py) |
-| Pickle | All semantic registries can produce pickles; reconstruction uses xpint's selected application registry with matching definitions/angle mode | [registry](../tests/test_registry.py), [kinds](../tests/test_kinds.py) |
+| Pickle | All semantic registries can produce pickles; reconstruction uses the selected application registry for the pickle's angle mode, which must have matching definitions | [registry](../tests/test_registry.py), [kinds](../tests/test_kinds.py) |
 | Physical tuple / timedelta | Reject metadata the representation cannot preserve; `from_tuple` does not infer semantics | [registry](../tests/test_registry.py) |
 | `Measurement` / `plus_minus` | Unclassified inputs only; classified arithmetic/conversion rejects in both operand orders, equality is false; explicitly construct an uncertainty Quantity to use normal propagation | [measurement](../tests/test_measurement.py) |
 | `wraps` | Inspect original converted values and declarations before magnitude extraction; probe variadic binding when decorating affected signatures and guard misplaced slots only on defective converters | [adapters](../tests/test_adapters.py) |

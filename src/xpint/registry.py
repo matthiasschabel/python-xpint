@@ -12,6 +12,7 @@ import copy
 import datetime
 import html
 import operator
+import warnings
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -3072,34 +3073,65 @@ def get_default_registry() -> SemanticRegistry:
     return SemanticRegistry()
 
 
-_application_registry: SemanticRegistry | None = None
+@cache
+def _default_angle_registry() -> SemanticRegistry:
+    # Built on first request so importing xpint does not pay for a second registry.
+    return SemanticRegistry(angle_dimension=True)
 
 
-def get_application_registry() -> SemanticRegistry:
-    """Return the registry used to reconstruct xpint pickles (default: shared registry)."""
-    return get_default_registry() if _application_registry is None else _application_registry
+# Pickles record their angle mode, so each mode has its own reconstruction registry and
+# selecting one never strands pickles of the other.
+_application_registries: dict[bool, SemanticRegistry] = {}
+_last_selected_angle_dimension = False
+
+
+def get_application_registry(*, angle_dimension: bool | None = None) -> SemanticRegistry:
+    """Return the registry that reconstructs xpint pickles of one angle mode.
+
+    Args:
+        angle_dimension: The angle mode whose registry to return. Unless selected with
+            ``set_application_registry()``, ``False`` gives the shared registry behind
+            ``xpint.units`` and ``True`` a shared ``SemanticRegistry(angle_dimension=True)``.
+            Omitting it is deprecated when an angle-dimension registry was the last one
+            selected: the call then returns that registry, as before, with a
+            ``DeprecationWarning``; a future release will return the default-mode registry.
+
+    Raises:
+        TypeError: If angle_dimension is not a bool or None.
+    """
+    if angle_dimension is None:
+        if _last_selected_angle_dimension:
+            warnings.warn(
+                "get_application_registry() without angle_dimension returns the "
+                "angle-dimension registry selected last; a future release will return the "
+                "default-mode registry instead. Pass angle_dimension=True.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return _application_registries[True]
+        angle_dimension = False
+    elif not isinstance(angle_dimension, bool):
+        raise TypeError(f"angle_dimension must be a bool, got {type(angle_dimension).__name__}")
+    registry = _application_registries.get(angle_dimension)
+    if registry is not None:
+        return registry
+    return _default_angle_registry() if angle_dimension else get_default_registry()
 
 
 def set_application_registry(registry: SemanticRegistry) -> None:
-    """Choose the xpint pickle registry without changing Pint's application registry.
+    """Choose the pickle registry for ``registry.angle_dimension``'s mode.
+
+    The other mode's registry is unchanged, so default-mode and angle-mode pickles can be
+    loaded side by side. Pint's application registry is never changed.
 
     Raises:
         TypeError: If registry is not a SemanticRegistry.
     """
     if not isinstance(registry, SemanticRegistry):
         raise TypeError("application registry must be a SemanticRegistry")
-    global _application_registry
-    _application_registry = registry
-
-
-def _pickle_registry(angle_dimension: bool) -> SemanticRegistry:
-    registry = get_application_registry()
-    if registry.angle_dimension != angle_dimension:
-        raise ValueError(
-            "pickle angle_dimension does not match the application registry; "
-            f"call set_application_registry() with a SemanticRegistry(angle_dimension={angle_dimension})"
-        )
-    return registry
+    global _last_selected_angle_dimension
+    _application_registries[registry.angle_dimension] = registry
+    _last_selected_angle_dimension = registry.angle_dimension
 
 
 def _unpickle_semantic_quantity(
@@ -3111,7 +3143,7 @@ def _unpickle_semantic_quantity(
 ) -> SemanticQuantity:
     """Reconstruct a quantity against xpint's application registry."""
 
-    registry = _pickle_registry(angle_dimension)
+    registry = get_application_registry(angle_dimension=angle_dimension)
     if kind is not None and kind not in registry.kinds:
         # Workers in a fresh process (multiprocessing, Dask distributed) start with
         # the default registry, so name the setup step rather than only the kind.
@@ -3155,7 +3187,7 @@ def _unpickle_semantic_unit(
 ) -> SemanticUnit:
     """Reconstruct a unit against xpint's application registry."""
 
-    registry = _pickle_registry(angle_dimension)
+    registry = get_application_registry(angle_dimension=angle_dimension)
     return registry.Unit._from_parts(
         registry.Unit(str(units)),
         semantic_factors=semantic_factors,

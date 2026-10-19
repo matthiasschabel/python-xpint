@@ -321,14 +321,17 @@ designated values rather than drop their labels.
 
 ### Pickling
 
-Quantities and units from any registry can be pickled. Unpickling reconstructs
-against `xpint.get_application_registry()`, by default the registry behind
-`xpint.units`. Registry definitions are not pickled: to unpickle values that use
-custom units or kinds, or an angle-dimension registry, call
-`xpint.set_application_registry(registry)` first, also in worker processes such
-as multiprocessing or Dask distributed. A missing kind or mismatched angle mode
-raises an error naming that function. Neither function changes Pint's
-application registry.
+Quantities and units from any registry can be pickled. A pickle records its
+angle mode, and unpickling reconstructs against
+`xpint.get_application_registry(angle_dimension=...)` for that mode: by default
+the registry behind `xpint.units`, or a shared
+`SemanticRegistry(angle_dimension=True)` for angle-mode pickles. Registry
+definitions are not pickled: to unpickle values that use custom units or kinds,
+call `xpint.set_application_registry(registry)` first, also in worker processes
+such as multiprocessing or Dask distributed. It selects the registry for
+`registry.angle_dimension`'s mode only, so pickles of both modes load side by
+side. A missing kind raises an error naming that function. Neither function
+changes Pint's application registry.
 
 `to_tuple()` and `to_timedelta()` reject kinds and designations, which those
 representations cannot hold; remove them explicitly first.

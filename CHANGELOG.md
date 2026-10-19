@@ -4,8 +4,22 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- The default registry defines a `MomentOfInertia` kind (`kilogram * meter ** 2`).
+  It existed only in angle-dimension registries (`kilogram * meter ** 2 / radian ** 2`),
+  so `as_kind("MomentOfInertia")` raised `KeyError` in default-mode code and a
+  pickle carrying the kind could not be restored there.
+
 ### Changed
 
+- `set_application_registry()` selects the pickle registry for its registry's
+  angle mode only, and `get_application_registry()` takes a keyword
+  `angle_dimension` selecting the mode. Selecting an angle-dimension registry used
+  to make every default-mode pickle fail with `ValueError`, so a process could not
+  load pickles of both modes; they now load side by side. An angle-mode pickle with
+  no angle registry selected reconstructs in a shared
+  `SemanticRegistry(angle_dimension=True)` instead of raising.
 - In an angle-dimension registry, conversion to a plain array (`np.asarray()`,
   `np.array()`, `np.asanyarray()`, assignment into an `ndarray`) raises
   `DimensionalityError` for a value carrying an angle, as `float()` already did.
@@ -16,12 +30,11 @@ All notable public changes to xpint are documented here.
   angle as a quantity instead of a bare magnitude. Default registries and
   non-angle units are unchanged.
 
-### Added
+### Deprecated
 
-- The default registry defines a `MomentOfInertia` kind (`kilogram * meter ** 2`).
-  It existed only in angle-dimension registries (`kilogram * meter ** 2 / radian ** 2`),
-  so `as_kind("MomentOfInertia")` raised `KeyError` in default-mode code and a
-  pickle carrying the kind could not be restored there.
+- Calling `get_application_registry()` without `angle_dimension` after selecting an
+  angle-dimension registry returns that registry with a `DeprecationWarning`. A
+  future release will return the default-mode registry; pass `angle_dimension=True`.
 
 ## [0.1.0b2] - 2026-10-17
 

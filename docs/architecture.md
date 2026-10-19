@@ -205,10 +205,13 @@ Other duck-array backends retain Pint's mutation behavior.
 
 Pickles store values, units, classification, factors, and angle mode, not whole
 registry definitions. Values from any semantic registry can be serialized;
-reconstruction uses `xpint.get_application_registry()`. The caller must select
-compatible definitions and angle mode using `xpint.set_application_registry()`.
-The default is xpint's shared symbol registry. Neither function changes Pint's
-application registry. Pickle is not a versioned cross-language interchange schema.
+reconstruction uses `xpint.get_application_registry(angle_dimension=...)` for the
+pickle's recorded angle mode. Each mode has its own slot, because a process may
+hold both kinds of pickle; one slot made selecting an angle registry strand every
+default-mode pickle. The caller selects compatible definitions with
+`xpint.set_application_registry()`, which fills only its registry's mode. The
+defaults are xpint's shared symbol registry and a lazily built shared angle
+registry. Neither function changes Pint's application registry. Pickle is not a versioned cross-language interchange schema.
 
 `.magnitude`, `m_as()` after explicit conversion, and physical registry conversion
 are deliberate extraction boundaries. `m_as()` is the checked one: a designated value

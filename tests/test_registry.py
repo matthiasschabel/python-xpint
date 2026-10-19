@@ -921,47 +921,139 @@ def test_absolute_temperature_string_parsing_explains_construction(constructor: 
     assert generic.magnitude == 300
 
 
+@pytest.fixture
+def restore_application_registries() -> Any:
+    """Restore both pickle slots, selecting default mode last as at import."""
+
+    from xpint import get_application_registry, set_application_registry
+
+    previous_angle = get_application_registry(angle_dimension=True)
+    previous_default = get_application_registry(angle_dimension=False)
+    yield
+    set_application_registry(previous_angle)
+    set_application_registry(previous_default)
+
+
 @pytest.mark.parametrize("angle_dimension", [False, True])
 @pytest.mark.parametrize("quantity", [False, True])
+@pytest.mark.usefixtures("restore_application_registries")
 def test_application_registry_pickle_roundtrip(angle_dimension: bool, quantity: bool) -> None:
     import pickle
 
     from xpint import get_application_registry, set_application_registry
 
-    previous = get_application_registry()
     pint_previous = pint.get_application_registry()  # type: ignore[no-untyped-call]
     registry = SemanticRegistry(angle_dimension=angle_dimension)
     registry.define("test_length = 2 * meter")
     registry.define_kind("TestLength", "meter")
     unit = registry.test_length["sample"]
     original = registry.Quantity(3.0, unit, kind="TestLength") if quantity else unit
-    try:
-        set_application_registry(registry)
-        assert get_application_registry() is registry
-        restored = pickle.loads(pickle.dumps(original))
-        assert restored == original
-        assert restored.designation_signature == original.designation_signature
-        assert pint.get_application_registry() is pint_previous  # type: ignore[no-untyped-call]
-    finally:
-        set_application_registry(previous)
+
+    set_application_registry(registry)
+
+    assert get_application_registry(angle_dimension=angle_dimension) is registry
+    restored = pickle.loads(pickle.dumps(original))
+    assert restored == original
+    assert restored.designation_signature == original.designation_signature
+    assert pint.get_application_registry() is pint_previous  # type: ignore[no-untyped-call]
 
 
-@pytest.mark.parametrize("quantity", [False, True])
-def test_pickle_rejects_application_registry_angle_mismatch(quantity: bool) -> None:
+@pytest.mark.parametrize("angle_first", [False, True], ids=["default-first", "angle-first"])
+@pytest.mark.usefixtures("restore_application_registries")
+def test_pickles_of_both_angle_modes_load_side_by_side(angle_first: bool) -> None:
+    """Selecting an angle registry must not strand default-mode pickles, or vice versa."""
+
     import pickle
 
     from xpint import get_application_registry, set_application_registry
 
-    registry = SemanticRegistry(angle_dimension=True)
-    value = registry.Quantity(1, "radian") if quantity else registry.radian
-    payload = pickle.dumps(value)
-    previous = get_application_registry()
-    try:
-        set_application_registry(ureg)
-        with pytest.raises(ValueError, match=r"angle_dimension.*set_application_registry.*True"):
-            pickle.loads(payload)
-    finally:
-        set_application_registry(previous)
+    default_target = SemanticRegistry()
+    angle_target = SemanticRegistry(angle_dimension=True)
+    for registry in (
+        (angle_target, default_target) if angle_first else (default_target, angle_target)
+    ):
+        set_application_registry(registry)
+    angle_source = SemanticRegistry(angle_dimension=True)
+    payload = (
+        ureg.Quantity(3.0, "m"),
+        ureg.meter,
+        angle_source.Quantity(1.0, "rad"),
+        angle_source.radian,
+    )
+
+    default_quantity, default_unit, angle_quantity, angle_unit = pickle.loads(pickle.dumps(payload))
+
+    assert get_application_registry(angle_dimension=False) is default_target
+    assert get_application_registry(angle_dimension=True) is angle_target
+    assert isinstance(default_quantity, default_target.Quantity)
+    assert isinstance(default_unit, default_target.Unit)
+    assert isinstance(angle_quantity, angle_target.Quantity)
+    assert isinstance(angle_unit, angle_target.Unit)
+    assert angle_quantity.m_as("radian") == pytest.approx(1.0, rel=1e-15)
+
+
+def test_unselected_angle_slot_uses_a_shared_angle_registry() -> None:
+    """Runs in a fresh interpreter: the first-use default cannot be observed otherwise."""
+
+    import subprocess
+    import sys
+
+    script = """
+import pickle
+from xpint import SemanticRegistry, get_application_registry
+payload = pickle.dumps(SemanticRegistry(angle_dimension=True).Quantity(2.0, "rad"))
+restored = pickle.loads(payload)
+shared = get_application_registry(angle_dimension=True)
+assert shared is get_application_registry(angle_dimension=True)
+assert shared.angle_dimension
+assert isinstance(restored, shared.Quantity)
+assert restored.m_as("radian") == 2.0
+"""
+    result = subprocess.run(
+        [sys.executable, "-W", "error::DeprecationWarning", "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.usefixtures("restore_application_registries")
+def test_application_registry_getter_without_mode_is_deprecated_after_angle_selection() -> None:
+    import warnings
+
+    from xpint import get_application_registry, set_application_registry
+
+    angle_registry = SemanticRegistry(angle_dimension=True)
+    set_application_registry(angle_registry)
+    with pytest.warns(DeprecationWarning, match=r"angle_dimension=True"):
+        assert get_application_registry() is angle_registry
+
+    set_application_registry(ureg)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert get_application_registry() is ureg
+
+
+def test_application_registry_getter_rejects_non_bool_mode() -> None:
+    from xpint import get_application_registry
+
+    with pytest.raises(TypeError, match="angle_dimension must be a bool, got int"):
+        get_application_registry(angle_dimension=1)  # type: ignore[arg-type]
+
+
+@pytest.mark.usefixtures("restore_application_registries")
+def test_pickle_requires_kind_definitions_in_the_selected_angle_registry() -> None:
+    import pickle
+
+    from xpint import set_application_registry
+
+    set_application_registry(SemanticRegistry(angle_dimension=True))
+    source = SemanticRegistry(angle_dimension=True)
+    source.define_kind("UnregisteredTestAngle", "radian")
+
+    with pytest.raises(KeyError, match=r"'UnregisteredTestAngle'.*set_application_registry"):
+        pickle.loads(pickle.dumps(source.Quantity(1, "rad", kind="UnregisteredTestAngle")))
 
 
 def test_quantity_and_unit_constructors_do_not_accept_factor_expressions() -> None:
