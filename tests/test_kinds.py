@@ -254,6 +254,18 @@ def test_pickle_round_trip_uses_default_registry_and_preserves_kind() -> None:
     assert restored.kind == "Energy"
 
 
+def test_moment_of_inertia_kind_is_available_without_angle_dimensions() -> None:
+    """Default-mode code must classify and round-trip inertia, not only angle mode."""
+
+    inertia = (2.0 * ureg.kilogram * m**2).as_kind("MomentOfInertia")
+
+    assert inertia.kind == "MomentOfInertia"
+    assert "MomentOfInertia" in inertia.compatible_kinds()
+    restored = pickle.loads(pickle.dumps(inertia))
+    assert restored.kind == "MomentOfInertia"
+    assert restored == inertia
+
+
 def test_timedelta_conversion_rejects_unrepresentable_kind() -> None:
     duration = (2 * ureg.hour).as_kind("Time")
 

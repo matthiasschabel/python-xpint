@@ -4,6 +4,13 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- The default registry defines a `MomentOfInertia` kind (`kilogram * meter ** 2`).
+  It existed only in angle-dimension registries (`kilogram * meter ** 2 / radian ** 2`),
+  so `as_kind("MomentOfInertia")` raised `KeyError` in default-mode code and a
+  pickle carrying the kind could not be restored there.
+
 ## [0.1.0b2] - 2026-10-17
 
 ### Changed

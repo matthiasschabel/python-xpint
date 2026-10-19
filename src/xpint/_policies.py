@@ -121,6 +121,7 @@ _DEFAULT_KINDS = MappingProxyType(
         "AngularVelocity": "radian / second",
         "Action": "joule * second",
         "AngularMomentum": "kilogram * meter ** 2 / second",
+        "MomentOfInertia": "kilogram * meter ** 2",
         "Temperature": "kelvin",
         "TemperatureDifference": "kelvin",
         "Length": "meter",

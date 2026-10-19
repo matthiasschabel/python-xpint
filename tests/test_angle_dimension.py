@@ -29,7 +29,7 @@ def test_default_registry_keeps_pint_angle_semantics() -> None:
     assert registry.get_dimensionality("radian") == registry.get_dimensionality("")
     assert registry.get_dimensionality("radian/second") == registry.get_dimensionality("hertz")
     assert registry.kinds["Torque"].reference_unit == "newton * meter"
-    assert "MomentOfInertia" not in registry.kinds
+    assert registry.kinds["MomentOfInertia"].reference_unit == "kilogram * meter ** 2"
     assert float(registry.Quantity(90.0, "degree")) == pytest.approx(np.pi / 2, rel=1e-15)
 
 
