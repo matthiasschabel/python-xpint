@@ -13,7 +13,6 @@ import datetime
 import html
 import operator
 import threading
-import warnings
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -3098,35 +3097,20 @@ def get_default_registry() -> SemanticRegistry:
 # Pickles record their angle mode, so each mode has its own reconstruction registry and
 # selecting one never strands pickles of the other.
 _application_registries: dict[bool, SemanticRegistry] = {}
-_last_selected_angle_dimension = False
 
 
-def get_application_registry(*, angle_dimension: bool | None = None) -> SemanticRegistry:
+def get_application_registry(*, angle_dimension: bool = False) -> SemanticRegistry:
     """Return the registry that reconstructs xpint pickles of one angle mode.
 
     Args:
         angle_dimension: The angle mode whose registry to return. Unless selected with
             ``set_application_registry()``, ``False`` gives the shared registry behind
             ``xpint.units`` and ``True`` a shared ``SemanticRegistry(angle_dimension=True)``.
-            Omitting it is deprecated when an angle-dimension registry was the last one
-            selected: the call then returns that registry, as before, with a
-            ``DeprecationWarning``; a future release will return the default-mode registry.
 
     Raises:
-        TypeError: If angle_dimension is not a bool or None.
+        TypeError: If angle_dimension is not a bool.
     """
-    if angle_dimension is None:
-        if _last_selected_angle_dimension:
-            warnings.warn(
-                "get_application_registry() without angle_dimension returns the "
-                "angle-dimension registry selected last; a future release will return the "
-                "default-mode registry instead. Pass angle_dimension=True.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return _application_registries[True]
-        angle_dimension = False
-    elif not isinstance(angle_dimension, bool):
+    if not isinstance(angle_dimension, bool):
         raise TypeError(f"angle_dimension must be a bool, got {type(angle_dimension).__name__}")
     registry = _application_registries.get(angle_dimension)
     if registry is not None:
@@ -3145,9 +3129,7 @@ def set_application_registry(registry: SemanticRegistry) -> None:
     """
     if not isinstance(registry, SemanticRegistry):
         raise TypeError("application registry must be a SemanticRegistry")
-    global _last_selected_angle_dimension
     _application_registries[registry.angle_dimension] = registry
-    _last_selected_angle_dimension = registry.angle_dimension
 
 
 def _unpickle_semantic_quantity(

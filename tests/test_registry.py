@@ -923,7 +923,7 @@ def test_absolute_temperature_string_parsing_explains_construction(constructor: 
 
 @pytest.fixture
 def restore_application_registries() -> Any:
-    """Restore both pickle slots, selecting default mode last as at import."""
+    """Restore both pickle slots through the public API."""
 
     from xpint import get_application_registry, set_application_registry
 
@@ -1058,20 +1058,15 @@ def _run_fresh_interpreter(script: str) -> None:
 
 
 @pytest.mark.usefixtures("restore_application_registries")
-def test_application_registry_getter_without_mode_is_deprecated_after_angle_selection() -> None:
-    import warnings
+def test_application_registry_getter_defaults_to_default_mode() -> None:
+    """Selecting an angle registry must not change what the argument-free getter returns."""
 
     from xpint import get_application_registry, set_application_registry
 
-    angle_registry = SemanticRegistry(angle_dimension=True)
-    set_application_registry(angle_registry)
-    with pytest.warns(DeprecationWarning, match=r"angle_dimension=True"):
-        assert get_application_registry() is angle_registry
+    set_application_registry(SemanticRegistry(angle_dimension=True))
 
-    set_application_registry(ureg)
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        assert get_application_registry() is ureg
+    assert get_application_registry() is get_application_registry(angle_dimension=False)
+    assert not get_application_registry().angle_dimension
 
 
 def test_application_registry_getter_rejects_non_bool_mode() -> None:

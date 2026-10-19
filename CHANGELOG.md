@@ -15,7 +15,9 @@ All notable public changes to xpint are documented here.
 
 - `set_application_registry()` selects the pickle registry for its registry's
   angle mode only, and `get_application_registry()` takes a keyword
-  `angle_dimension` selecting the mode. Selecting an angle-dimension registry used
+  `angle_dimension` selecting the mode. Without it, the getter returns the
+  default-mode registry; it used to return whichever registry was selected last,
+  so pass `angle_dimension=True` to get an angle-dimension one. Selecting an angle-dimension registry used
   to make every default-mode pickle fail with `ValueError`, so a process could not
   load pickles of both modes; they now load side by side. An angle-mode pickle with
   no angle registry selected reconstructs in a shared
@@ -38,12 +40,6 @@ All notable public changes to xpint are documented here.
   registries could not be combined with later ones. The function no longer
   carries `functools.cache` attributes such as `cache_clear()`, which were never
   documented and would have left `xpint.units` bound to a discarded registry.
-
-### Deprecated
-
-- Calling `get_application_registry()` without `angle_dimension` after selecting an
-  angle-dimension registry returns that registry with a `DeprecationWarning`. A
-  future release will return the default-mode registry; pass `angle_dimension=True`.
 
 ## [0.1.0b2] - 2026-10-17
 
