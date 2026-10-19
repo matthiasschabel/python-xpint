@@ -1249,7 +1249,7 @@ float(theta)
       </div>
     </details>
 
-    <p class="note" style="margin-top: 22px;">Scope: v0 supports Pint's stock definition set, at construction time, with no runtime toggle and no custom contexts. The angle registry scopes its internal redefinitions so the caller's <code>on_redefinition</code> policy remains in force for later definitions; <code>on_redefinition="raise"</code> is supported. Values from scoped registries can be pickled; select an xpint application registry with matching definitions and angle mode before unpickling. <code>examples/angle_dimensions.py</code> exercises the public behavior through both registry modes.</p>
+    <p class="note" style="margin-top: 22px;">Scope: v0 supports Pint's stock definition set, at construction time, with no runtime toggle and no custom contexts. The angle registry scopes its internal redefinitions so the caller's <code>on_redefinition</code> policy remains in force for later definitions; <code>on_redefinition="raise"</code> is supported. Values from scoped registries can be pickled; each angle mode has its own xpint application registry, so select one with matching definitions for each mode you unpickle. <code>examples/angle_dimensions.py</code> exercises the public behavior through both registry modes.</p>
   </section>
 
   <!-- ================= STATUS ================= -->

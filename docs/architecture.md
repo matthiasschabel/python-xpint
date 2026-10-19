@@ -211,7 +211,9 @@ hold both kinds of pickle; one slot made selecting an angle registry strand ever
 default-mode pickle. The caller selects compatible definitions with
 `xpint.set_application_registry()`, which fills only its registry's mode. The
 defaults are xpint's shared symbol registry and a lazily built shared angle
-registry. Neither function changes Pint's application registry. Pickle is not a versioned cross-language interchange schema.
+registry, each constructed once even under concurrent first use. Neither function
+changes Pint's application registry. Pickle is not a versioned cross-language
+interchange schema.
 
 `.magnitude`, `m_as()` after explicit conversion, and physical registry conversion
 are deliberate extraction boundaries. `m_as()` is the checked one: a designated value
