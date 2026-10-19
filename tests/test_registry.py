@@ -1009,20 +1009,29 @@ assert restored.m_as("radian") == 2.0
     _run_fresh_interpreter(script)
 
 
-def test_concurrent_first_use_shares_one_angle_registry() -> None:
-    """Fresh interpreter, so the shared angle registry has not been built yet."""
+@pytest.mark.parametrize(
+    "getter",
+    [
+        "get_default_registry()",
+        "get_application_registry(angle_dimension=False)",
+        "get_application_registry(angle_dimension=True)",
+    ],
+)
+def test_concurrent_first_use_shares_one_registry(getter: str) -> None:
+    """Fresh interpreter, so the shared registry has not been built yet."""
 
-    script = """
+    script = f"""
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
-from xpint import get_application_registry
+from xpint import get_application_registry, get_default_registry
 barrier = Barrier(8)
 def first_use(_):
     barrier.wait()
-    return get_application_registry(angle_dimension=True)
+    return {getter}
 with ThreadPoolExecutor(max_workers=8) as pool:
     registries = list(pool.map(first_use, range(8)))
-assert len({id(registry) for registry in registries}) == 1
+assert len({{id(registry) for registry in registries}}) == 1
+assert registries[0] is {getter}
 """
     _run_fresh_interpreter(script)
 

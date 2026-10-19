@@ -30,6 +30,13 @@ All notable public changes to xpint are documented here.
   angle as a quantity instead of a bare magnitude. Default registries and
   non-angle units are unchanged.
 
+### Fixed
+
+- `get_default_registry()` returns one registry even when several threads make
+  the first call at once. It used to build one per racing thread when
+  `xpint.units` had not been imported yet, and values made in the extra
+  registries could not be combined with later ones.
+
 ### Deprecated
 
 - Calling `get_application_registry()` without `angle_dimension` after selecting an

@@ -3067,29 +3067,32 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
         return absolute_units
 
 
-@cache
-def get_default_registry() -> SemanticRegistry:
-    """Return xpint's shared semantic registry without installing it globally."""
-
-    return SemanticRegistry()
+_shared_registries: dict[bool, SemanticRegistry] = {}
+_shared_registries_lock = threading.Lock()
 
 
-_default_angle_registry_lock = threading.Lock()
-_shared_angle_registry: SemanticRegistry | None = None
-
-
-def _default_angle_registry() -> SemanticRegistry:
-    # Built on first request so importing xpint does not pay for a second registry.
-    # functools.cache would let concurrent first callers each build one, stranding
-    # values unpickled into the losers, so construction is checked again under a lock.
-    global _shared_angle_registry
-    registry = _shared_angle_registry
+def _shared_registry(angle_dimension: bool) -> SemanticRegistry:
+    # Built on first request, so importing xpint does not pay for an unused registry.
+    # functools.cache would let concurrent first callers each build one and strand
+    # values made in the losers, so construction is checked again under a lock.
+    registry = _shared_registries.get(angle_dimension)
     if registry is None:
-        with _default_angle_registry_lock:
-            if _shared_angle_registry is None:
-                _shared_angle_registry = SemanticRegistry(angle_dimension=True)
-            registry = _shared_angle_registry
+        with _shared_registries_lock:
+            registry = _shared_registries.get(angle_dimension)
+            if registry is None:
+                registry = SemanticRegistry(angle_dimension=angle_dimension)
+                _shared_registries[angle_dimension] = registry
     return registry
+
+
+def get_default_registry() -> SemanticRegistry:
+    """Return xpint's shared semantic registry without installing it globally.
+
+    Every call, including concurrent first calls from several threads, returns the same
+    registry.
+    """
+
+    return _shared_registry(False)
 
 
 # Pickles record their angle mode, so each mode has its own reconstruction registry and
@@ -3128,7 +3131,7 @@ def get_application_registry(*, angle_dimension: bool | None = None) -> Semantic
     registry = _application_registries.get(angle_dimension)
     if registry is not None:
         return registry
-    return _default_angle_registry() if angle_dimension else get_default_registry()
+    return _shared_registry(angle_dimension)
 
 
 def set_application_registry(registry: SemanticRegistry) -> None:
