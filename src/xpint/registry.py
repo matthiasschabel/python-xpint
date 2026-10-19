@@ -12,6 +12,7 @@ import copy
 import datetime
 import html
 import operator
+import threading
 import warnings
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
@@ -3073,10 +3074,22 @@ def get_default_registry() -> SemanticRegistry:
     return SemanticRegistry()
 
 
-@cache
+_default_angle_registry_lock = threading.Lock()
+_shared_angle_registry: SemanticRegistry | None = None
+
+
 def _default_angle_registry() -> SemanticRegistry:
     # Built on first request so importing xpint does not pay for a second registry.
-    return SemanticRegistry(angle_dimension=True)
+    # functools.cache would let concurrent first callers each build one, stranding
+    # values unpickled into the losers, so construction is checked again under a lock.
+    global _shared_angle_registry
+    registry = _shared_angle_registry
+    if registry is None:
+        with _default_angle_registry_lock:
+            if _shared_angle_registry is None:
+                _shared_angle_registry = SemanticRegistry(angle_dimension=True)
+            registry = _shared_angle_registry
+    return registry
 
 
 # Pickles record their angle mode, so each mode has its own reconstruction registry and
