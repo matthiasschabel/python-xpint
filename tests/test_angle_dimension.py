@@ -249,7 +249,17 @@ def test_float_names_the_escape_hatches(angle_registry: SemanticRegistry) -> Non
         complex(angle_registry.Quantity(90.0, "degree"))
 
 
-@pytest.mark.parametrize("convert", [np.asarray, np.array], ids=["asarray", "array"])
+def _assign_into_plain_array(value: Any) -> Any:
+    target = np.zeros(np.shape(value.magnitude))
+    target[...] = value
+    return target
+
+
+@pytest.mark.parametrize(
+    "convert",
+    [np.asarray, np.array, np.asanyarray, np.ma.asarray, _assign_into_plain_array],
+    ids=["asarray", "array", "asanyarray", "ma.asarray", "setitem"],
+)
 @pytest.mark.parametrize(
     ("magnitude", "unit"),
     [(90.0, "degree"), ([1.0, 2.0], "radian"), ([[1.0]], "radian * meter")],
@@ -262,8 +272,50 @@ def test_ndarray_conversion_refuses_an_angle_as_float_does(
 
     angle = angle_registry.Quantity(np.asarray(magnitude), unit)
 
-    with pytest.raises(DimensionalityError, match=r"so numpy\.asarray\(\) cannot choose"):
+    with pytest.raises(
+        DimensionalityError,
+        match=r"so conversion to ndarray cannot choose.*clear it by multiplying",
+    ):
         convert(angle)
+
+
+def test_masked_extraction_keeps_an_angle_as_a_quantity(
+    angle_registry: SemanticRegistry,
+) -> None:
+    """filled() and compressed() return bare magnitudes for plain values, as in Pint.
+
+    An angle is not a number in angle mode, so it must not leave as one either.
+    """
+
+    angle = angle_registry.Quantity(np.ma.masked_array([1.0, 2.0], mask=[False, True]), "rad")
+
+    filled = angle.filled(0.0)
+    compressed = angle.compressed()
+
+    assert isinstance(filled, SemanticQuantity)
+    assert filled.units == angle_registry.radian
+    np.testing.assert_array_equal(filled.magnitude, [1.0, 0.0])
+    assert isinstance(compressed, SemanticQuantity)
+    assert compressed.units == angle_registry.radian
+    np.testing.assert_array_equal(compressed.magnitude, [1.0])
+
+
+def test_masked_extraction_of_a_non_angle_still_returns_a_magnitude(
+    angle_registry: SemanticRegistry,
+) -> None:
+    energy = angle_registry.Quantity(np.ma.masked_array([1.0, 2.0], mask=[False, True]), "J")
+
+    assert not isinstance(energy.compressed(), SemanticQuantity)
+
+
+def test_dask_rechunk_keeps_an_angle_as_a_quantity(angle_registry: SemanticRegistry) -> None:
+    da = pytest.importorskip("dask.array")
+    angle = angle_registry.Quantity(da.from_array(np.arange(4.0), chunks=2), "rad")
+
+    rechunked = angle.rechunk(4)
+
+    assert isinstance(rechunked, SemanticQuantity)
+    assert rechunked.units == angle_registry.radian
 
 
 def test_ndarray_conversion_of_a_non_angle_keeps_pints_stripping(

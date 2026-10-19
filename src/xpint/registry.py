@@ -1389,6 +1389,18 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             )
         return super().compare(other, op)
 
+    def _angular_content(self) -> dict[str, Any]:
+        """Return the angular exponents this value carries; empty outside angle mode."""
+
+        registry = cast(SemanticRegistry, self._REGISTRY)
+        if not registry.angle_dimension:
+            return {}
+        return {
+            name: exponent
+            for name, exponent in self.dimensionality.items()
+            if name in registry._angular_dimensions and exponent
+        }
+
     def _reject_angle_coercion(self, target: str) -> None:
         """Explain how to leave an angle registry instead of raising Pint's bare error.
 
@@ -1402,13 +1414,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         """
 
         registry = cast(SemanticRegistry, self._REGISTRY)
-        if not registry.angle_dimension:
-            return
-        angular = {
-            name: exponent
-            for name, exponent in self.dimensionality.items()
-            if name in registry._angular_dimensions and exponent
-        }
+        angular = self._angular_content()
         if not angular:
             return
         carried = " * ".join(
@@ -1429,7 +1435,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             self._units,
             "dimensionless",
             extra_msg=(
-                f" - an angle is not a number under angle_dimension=True, so {target}() "
+                f" - an angle is not a number under angle_dimension=True, so {target} "
                 f"cannot choose a convention for you. This quantity carries {carried};"
                 f"{naming} clear it by multiplying by {clearing}."
             ),
@@ -1447,7 +1453,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 "cannot coerce a quantity with a retained kind to float; "
                 "explicitly remove the kind first."
             )
-        self._reject_angle_coercion("float")
+        self._reject_angle_coercion("float()")
         return super().__float__()
 
     @override
@@ -1462,7 +1468,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 "cannot coerce a quantity with a retained kind to int; "
                 "explicitly remove the kind first."
             )
-        self._reject_angle_coercion("int")
+        self._reject_angle_coercion("int()")
         return super().__int__()
 
     @override
@@ -1477,7 +1483,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 "cannot coerce a quantity with a retained kind to complex; "
                 "explicitly remove the kind first."
             )
-        self._reject_angle_coercion("complex")
+        self._reject_angle_coercion("complex()")
         return super().__complex__()
 
     def _power_exponent(self, other: Any) -> Fraction | None:
@@ -1690,7 +1696,7 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
                 "cannot represent semantic metadata; operate on magnitude explicitly."
             )
         # Pint would strip the angle with only a warning; refuse it as float() does.
-        self._reject_angle_coercion("numpy.asarray")
+        self._reject_angle_coercion("conversion to ndarray")
         result = super().__array__(dtype)
         if dtype is not None:
             converted = result.astype(dtype, copy=False)
@@ -1782,12 +1788,14 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             raise AttributeError(
                 f"Magnitude '{type(self._magnitude).__name__}' does not support filled."
             ) from None
-        if not self._is_semantically_classified():
+        # An unclassified Pint value returns a bare magnitude, as in Pint; an angle in
+        # angle mode is not a number, so it keeps its units like a classified value.
+        if not self._is_semantically_classified() and not self._angular_content():
             return magnitude
         return self._result(magnitude, self._units, self._kind)
 
     def compressed(self) -> Any:
-        """Return unmasked values with units and semantic metadata intact."""
+        """Return unmasked values, keeping units only for classified or angular values."""
 
         try:
             magnitude = self._magnitude.compressed()
@@ -1795,7 +1803,9 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             raise AttributeError(
                 f"Magnitude '{type(self._magnitude).__name__}' does not support compressed."
             ) from None
-        if not self._is_semantically_classified():
+        # An unclassified Pint value returns a bare magnitude, as in Pint; an angle in
+        # angle mode is not a number, so it keeps its units like a classified value.
+        if not self._is_semantically_classified() and not self._angular_content():
             return magnitude
         return self._result(magnitude, self._units, self._kind)
 
@@ -2146,7 +2156,9 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
             raise AttributeError(
                 f"Magnitude '{type(self._magnitude).__name__}' does not support rechunk."
             ) from None
-        if not self._is_semantically_classified():
+        # An unclassified Pint value returns a bare magnitude, as in Pint; an angle in
+        # angle mode is not a number, so it keeps its units like a classified value.
+        if not self._is_semantically_classified() and not self._angular_content():
             return magnitude
         return self._result(magnitude, self._units, self._kind)
 

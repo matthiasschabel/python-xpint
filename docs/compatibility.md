@@ -76,7 +76,7 @@ ownership checks and guards against unit-blind `out` and `initial` handling.
 | Roots, square, reciprocal | Power semantics: drop kind, transform designation powers; Absolute rejects |
 | Index operations (`argmax`, `argmin`, `argsort`, `nonzero`) | Return plain indices, including for Absolute inputs |
 | Trigonometry | Drop input kinds, reject retained designations, delegate dimensional checks to Pint; `arctan2` requires exact semantics and rejects Absolute inputs; results unkinded |
-| Masked `filled` / `compressed` | Preserve classified metadata; ordinary Pint behavior may return a bare array |
+| Masked `filled` / `compressed` | Preserve classified metadata and, in angle mode, angular units; ordinary Pint behavior may return a bare array |
 | Dask `compute`, `persist`, `rechunk` | Preserve classified metadata; arbitrary classified `map_blocks` rejects |
 | xarray | Tested reductions, composition, indexing/transpose, Dask computation and multiplication by ordinary xpint units |
 | pint-xarray | Ordinary quantification with `force_ndarray_like=True`; designated text round trips unsupported |

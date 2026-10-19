@@ -6,10 +6,14 @@ All notable public changes to xpint are documented here.
 
 ### Changed
 
-- In an angle-dimension registry, `np.asarray()` and `np.array()` raise
+- In an angle-dimension registry, conversion to a plain array (`np.asarray()`,
+  `np.array()`, `np.asanyarray()`, assignment into an `ndarray`) raises
   `DimensionalityError` for a value carrying an angle, as `float()` already did.
   Pint used to strip the angle with only a `UnitStrippedWarning`. Use
-  `m_as("radian")` or multiply by `1 / radian` first. Default registries and
+  `m_as("radian")` or multiply by `1 / radian` first. Libraries that coerce
+  before converting units, such as Matplotlib's `errorbar`, now raise for such
+  values too. Masked `filled()`/`compressed()` and Dask `rechunk()` return an
+  angle as a quantity instead of a bare magnitude. Default registries and
   non-angle units are unchanged.
 
 ### Added

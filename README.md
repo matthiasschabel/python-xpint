@@ -187,7 +187,10 @@ torque = 5 * u.J / u.rad  # not interchangeable with energy
 Rotational quantities then take their conjugate forms (`joule / radian` for
 torque), and leaving the angle world is explicit: extract a magnitude with
 `theta.m_as("radian")`, or multiply by `eta = 1 / u.radian`. `float()` and
-`np.asarray()` refuse a value carrying an angle rather than strip it. Pint's constants
+conversion to a plain array (`np.asarray()`, assignment into an `ndarray`, and
+libraries that coerce first, such as Matplotlib's `errorbar`) refuse a value
+carrying an angle rather than strip it, and masked `filled()`/`compressed()` and
+Dask `rechunk()` keep it as a quantity. Pint's constants
 carry no angle dimension, so formulas such as `hbar * omega` need one `eta`. The
 mode is fixed when the registry is created, and values from angle and ordinary
 registries cannot be mixed. See
@@ -286,7 +289,8 @@ array partly updated. The staging covers NumPy arrays only. Classified quantitie
 
 ### Other array libraries
 
-- Masked arrays: `filled()` and `compressed()` preserve classified values.
+- Masked arrays: `filled()` and `compressed()` preserve classified values and,
+  in an angle-dimension registry, angles.
 - Dask: `compute()`, `persist()`, and `rechunk()` preserve metadata; classified
   `map_blocks()` raises because the callback could change values or dimensions.
 - xarray: reductions, concatenation, `where`, transpose and indexing, Dask-backed
