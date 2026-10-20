@@ -2599,7 +2599,6 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
         for name, reference_unit in kinds.items():
             self.define_kind(name, reference_unit)
         self.define_designation_slot("molar", "[substance]")
-        self.define_designation_slot("millimolar", "[substance]")
         self._temperature_dimensionality = self.get_dimensionality("kelvin")
         self._intrinsic_affine_roles.clear()
 
@@ -2736,9 +2735,12 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
     ) -> None:
         """Declare the unique factor targeted by designation on a derived unit.
 
-        For example, millimolar targets ``[substance]`` with exponent one,
-        allowing ``mM["O2"]`` to mean a concentration of O2 rather than a
-        designation applied ambiguously to the whole compound dimension.
+        For example, molar targets ``[substance]`` with exponent one, allowing
+        ``mM["O2"]`` to mean a concentration of O2 rather than a designation
+        applied ambiguously to the whole compound dimension. A slot declared on
+        an unprefixed unit also applies to its prefixed forms (``uM``, ``nM``);
+        a slot declared on a prefixed unit applies to that unit only and takes
+        precedence over its base unit's.
 
         Args:
             unit: Single Pint unit token receiving the designation syntax.
@@ -2785,7 +2787,17 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
             return None
         slot = self._designation_slots.get(str(unit_name))
         if slot is None:
-            return None
+            # A prefix scales a unit without changing its dimensions, so a slot declared
+            # on ``molar`` also serves ``micromolar`` and ``nanomolar``. An exact-name
+            # declaration above takes precedence over the base unit's.
+            slots = {
+                self._designation_slots[base]
+                for prefix, base, _suffix in self.parse_unit_name(str(unit_name))
+                if prefix and base in self._designation_slots
+            }
+            if len(slots) != 1:
+                return None
+            slot = slots.pop()
         dimension, designation_power = slot
         return dimension, designation_power
 

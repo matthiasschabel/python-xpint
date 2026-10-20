@@ -19,6 +19,10 @@ All notable public changes to xpint are documented here.
 - Designated pint-xarray DataArray unit strings round-trip through
   quantify/dequantify using default or abbreviated formatting and a registry
   configured with `force_ndarray_like=True`; quantity kinds are not serialized.
+- Designation slots apply to prefixed forms of the declared unit, so the
+  built-in `molar` slot also serves `uM["Fe"]`, `nM["Fe"]`, and `"uM[Fe]"`.
+  A slot declared on a prefixed unit applies to that unit only and takes
+  precedence over its base unit's.
 
 ### Fixed
 

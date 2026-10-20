@@ -245,7 +245,8 @@ u.define_designation_slot("katal", "[substance]")
 
 `define_kind()` constrains a name to the dimensions of a reference unit.
 `define_designation_slot()` names the single factor that a label designates on a
-one-token derived unit. Both affect only that registry. See
+one-token derived unit; a slot on an unprefixed unit also covers its prefixed
+forms, so `u.kilokatal["trypsin"]` works too. Both affect only that registry. See
 [examples/custom_semantics.py](https://github.com/matthiasschabel/python-xpint/blob/main/examples/custom_semantics.py).
 
 ## Working with Pint, NumPy, and other libraries

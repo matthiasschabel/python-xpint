@@ -112,7 +112,9 @@ is physically dimensionless but retains a designation signature, so
 `is_semantic_unity` is false. Coercion and propagation use the stronger invariant.
 An undeclared compound factor cannot guess its designation slot. Registry slots
 make `mM["O2"]` target the substance numerator; the unambiguous general spelling
-is `mmol["O2"]/L`.
+is `mmol["O2"]/L`. Slot lookup falls back from a prefixed unit to its base unit,
+since a prefix changes scale and not dimensions; the built-in catalogue declares
+only `molar`. An exact-name slot wins over the base unit's.
 
 Conversion to a plain unit target preserves source designations, while an
 explicitly designated target must match. `as_undesignated()` is the explicit

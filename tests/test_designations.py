@@ -187,6 +187,35 @@ def test_millimolar_declares_substance_designation_slot() -> None:
 
 
 @pytest.mark.parametrize(
+    ("text", "prefix", "symbol"), [("uM", "micro", "µM"), ("nM", "nano", "nM"), ("M", "", "M")]
+)
+def test_prefixed_molar_units_inherit_substance_designation_slot(
+    text: str, prefix: str, symbol: str
+) -> None:
+    alias = ureg.Unit(f"{text}[Fe]")
+    decomposed = ureg.Unit(f"{prefix}mol[Fe]") / L
+
+    assert alias.designation_signature == decomposed.designation_signature
+    assert str(alias) == f"{prefix}molar[Fe]"
+    assert format(alias, "~") == f"{symbol}[Fe]"
+    assert ureg.Unit(str(alias)) == alias
+    assert pickle.loads(pickle.dumps(alias)) == alias
+    # One prefix rescaling plus one conversion; allow floating roundoff.
+    expected = ureg.Quantity(1, f"{text}").m_as("mM")
+    converted = ureg.Quantity(1, alias).to("mM[Fe]")
+    assert converted.units == mM["Fe"]
+    assert converted.magnitude == pytest.approx(expected, rel=1e-15, abs=0.0)
+
+
+def test_exact_designation_slot_takes_precedence_over_base_unit_slot() -> None:
+    registry = SemanticRegistry()
+    registry.define_designation_slot("kilometer", "[length]", exponent=2)
+
+    assert registry.km["x"].designation_signature != registry.m["x"].designation_signature
+    assert registry.cm["x"].designation_signature == registry.m["x"].designation_signature
+
+
+@pytest.mark.parametrize(
     ("operation", "error", "message"),
     [
         (lambda: mmol.with_designation(""), ValueError, "must not be empty"),
