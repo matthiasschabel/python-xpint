@@ -93,12 +93,14 @@ Development bar: `uv sync --locked`, `uv run ruff check .`,
 
 Installed-artifact sequence, per Python version (set `UV_PYTHON`; use a separate
 checkout per version; copy reviewed files into `dist/` instead of building when
-checking release artifacts):
+checking release artifacts). Name the venv interpreter for `uv pip`: with
+`UV_PYTHON` set to an interpreter path, a bare `uv pip install` installs into
+that interpreter, such as a conda base, rather than the checkout's venv:
 
 ```bash
 uv sync --locked --no-install-project
 uv build --no-sources                       # omit when testing reviewed artifacts
-uv pip install --no-deps dist/*.whl
+uv pip install --python .venv/bin/python --no-deps dist/*.whl
 XPINT_REQUIRE_WHEEL=1 uv run --no-sync pytest
 uv run --no-sync mypy src tests examples benchmarks tools/check_minimal_install.py
 uv run --no-sync twine check --strict dist/*
