@@ -82,11 +82,6 @@
   ],
   "parse_cases": [
     {
-      "id": "designated_concentration_slot",
-      "input": "mM[gadoteridol-Gd]",
-      "factors": [{"unit": "mM", "designation": "gadoteridol-Gd", "exponent": "1"}]
-    },
-    {
       "id": "designated_concentration_factors",
       "input": "mmol[O2]/L",
       "factors": [{"unit": "mmol", "designation": "O2", "exponent": "1"}, {"unit": "L", "exponent": "-1"}]

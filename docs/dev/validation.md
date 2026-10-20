@@ -102,6 +102,9 @@ What the release checks establish:
 schema version 1 with scalar cases. Its [Python consumer](../../tests/test_conformance.py)
 uses public APIs and the default (dimensionless-angle) registry. No MATLAB
 consumer has run, so the fixture is a contract candidate, not evidence of parity.
+Parse cases hold only behavior meant to be shared: registry designation slots
+(`mM[Fe]`, prefixed molar units) are xpint-specific and tested in the Python
+suite instead, as is plain-target designation adoption.
 
 - Operands give a magnitude, a unit name, an optional kind, and an optional
   factor designation. Unit names may map to each library's spelling.

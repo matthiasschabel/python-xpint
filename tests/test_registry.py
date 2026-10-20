@@ -19,6 +19,7 @@ from xpint.units import J, m, s, ureg
     ("text", "expected"),
     [
         ("mM[Fe]", ureg.mM["Fe"]),
+        ("mM[gadoteridol-Gd]", ureg.mM["gadoteridol-Gd"]),
         ("mmol[O2]/L", ureg.mmol["O2"] / ureg.L),
         ("micromoles[O2]", ureg.micromole["O2"]),
         ("µmol[O2]", ureg.micromole["O2"]),
