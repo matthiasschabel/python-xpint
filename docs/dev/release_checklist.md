@@ -20,12 +20,12 @@ until its evidence exists; record release results in [validation](validation.md)
 
 ### Before tagging
 
-- [ ] **I** Release text: README and CHANGELOG describe the release without
+- [x] **I** Release text: README and CHANGELOG describe the release without
   "unpublished" wording; the CHANGELOG date is the intended upload date. Changing
   it later means a new commit and repeated validation.
-- [ ] **I** Version agreement: `pyproject.toml`, `xpint.__version__`, the
+- [x] **I** Version agreement: `pyproject.toml`, `xpint.__version__`, the
   CHANGELOG heading, and the planned tag all name 0.1.0b4 / `v0.1.0b4`.
-- [ ] **I** Local installed-artifact validation on 3.12, 3.13, and 3.14 (commands
+- [x] **I** Local installed-artifact validation on 3.12, 3.13, and 3.14 (commands
   below), recorded in validation.
 - [ ] **M+I** Publication review of the public tree before visibility changes:
   no credentials, private repository names, local paths, personal data, or
