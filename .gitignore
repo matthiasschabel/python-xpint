@@ -15,3 +15,6 @@ htmlcov/
 # Agent guidance is local to each maintainer.
 AGENTS.md
 CLAUDE.md
+
+# Local session handoffs.
+docs/dev/handoffs/
