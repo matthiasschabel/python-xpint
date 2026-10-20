@@ -41,6 +41,10 @@ Offset-unit equality bypasses Pint's all-zero shortcut, which would equate
 `0 degC` with `0 degF`, and converts before comparing.
 Scalar hashes incorporate normalized physical value, registry identity, and
 semantic state. Unclassified dimensionless values hash like equal plain numbers.
+Unit equality is structural, as in Pint: `Unit("mmol[X]*min/L") == Unit("mM[X]*min")`
+is false, like `Unit("mmol/L") == Unit("mM")`, while the quantities
+`Quantity(1, "mmol[X]*min/L") == Quantity(1, "mM[X]*min")` compare equal. Compare
+quantities, or use `is_compatible_with`, to test physical and semantic equivalence.
 
 There is an inherited mixed-Pint limitation: xpint-left comparison with an ordinary
 Pint quantity rejects, while Pint-left dispatch may compare physically and return

@@ -1,7 +1,7 @@
 # Unsupported behavior and future work
 
 **Status:** Deferred
-**Last updated:** 2026-10-19
+**Last updated:** 2026-10-20
 **Scope:** xpint features outside the prepared beta contract and unresolved design choices.
 
 ## Context
@@ -24,6 +24,8 @@ Keep `pint>=0.25.3,<0.26` until a new compatibility matrix supports expansion.
 | Exponent identity | Designated strings parse powers as floats, as Pint does; a unit built with a non-dyadic `Fraction` power formats identically but parses back unequal | Normalize physical exponents or change unit equality |
 | Formatting | Designated default/abbreviated text and xpint rich display; direct Pint/Babel formatting rejects designations | Explicit format-specific preservation rules, including rational physical exponents that Pint 0.25 cannot format |
 | Group/root designations | Factor contributions only | Resolve scope and algebra separately from parser syntax |
+| Designated word-form powers | `m[cap] squared` and `square m[cap]` raise Pint's `UndefinedUnitError` naming `squared`/`square`; write `m[cap]**2` | Teach the designated lexer Pint's word forms, or at least name the operator form in the error |
+| Same-dimension labels under adoption | Two labels on one dimension converted to a plain target keep a root residual, e.g. `mmol[X]*mol[Y]/L` to `mM*mol` reads `millimolar * mole[X] * mole[Y] / mole`; the value is correct | Assign each label to a distinct target token when the target offers enough of them |
 | Measurement containers | Classified Measurement operands/targets reject; explicit Quantity construction can carry an uncertainty magnitude | Design propagation and serialization across Pint's separate Measurement hierarchy; sequence/container behavior needs its own contract |
 | Discrete and broader NumPy arithmetic | Classified floor division, modulo, divmod, dot/prod and undefined dispatch reject | Define result kinds, designation algebra, affine rules, reductions and mutation before expanding allowlists |
 | Scientific adapters | Bounded Dask/xarray/masked-array support; no broad pandas/JAX or arbitrary graph-transform claim | Backend-specific tests that check shape, dtype, laziness, ownership, and preserve/drop/reject behavior |
