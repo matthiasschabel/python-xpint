@@ -38,6 +38,13 @@ them on the actual release commit; commands live in the
 | 0.1.0b4 | `a680e79` | hosted Ubuntu / 3.12, 3.13, 3.14 | 0.25.3 / locked | `ci.yml` run 39379428932: 1,026 passed per job |
 | 0.1.0b4 | `a680e79` (tag `v0.1.0b4`) | hosted Ubuntu / 3.12.15, 3.13.16, 3.14.8 | 0.25.3 / locked | `publish.yml` run 39379661679, installed wheel: 1,026 passed per job; minimal install passed |
 | 0.1.0b4 | PyPI upload | macOS arm64 / 3.12.12, 3.13.14, 3.14.6 (free-threaded) | 0.25.3 / — | Fresh no-cache `pip install xpint==0.1.0b4` from PyPI outside any checkout; minimal install passed |
+| 0.1.0b5 | `95c8613` | macOS arm64 / 3.12.12 | 0.25.3 / 2.5.2 | Installed wheel: 1,077 passed, 0 skipped, 92.51% coverage; strict mypy, Twine, minimal install passed |
+| 0.1.0b5 | `95c8613` | macOS arm64 / 3.13.14 | 0.25.3 / 2.5.2 | Same results |
+| 0.1.0b5 | `95c8613` | macOS arm64 / 3.14.6 (free-threaded build, GIL disabled) | 0.25.3 / 2.5.2 | Same results |
+
+The three local 0.1.0b5 builds of `95c8613` produced identical artifacts:
+`xpint-0.1.0b5-py3-none-any.whl` SHA-256 `062cea4a3e64c3e9889dc3a6094148a1174ddd269d06d1bace19aa1c6fa531ba`,
+`xpint-0.1.0b5.tar.gz` SHA-256 `f2206eb2bee8126a5f425b1e1d7cfa924f5e0d1f80e397effd62a00be0486e21`.
 
 The three local 0.1.0b4 builds of `cbb05c3` produced identical artifacts:
 `xpint-0.1.0b4-py3-none-any.whl` SHA-256 `5d54d063665d67c18787b09ad38de7a3d66f9154b816aa29abfd820fbf898f03`,
