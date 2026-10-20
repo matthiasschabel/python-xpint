@@ -287,6 +287,14 @@ def canonical_factors(
             dimension, unit_power = candidate
             candidates.setdefault(dimension, (str(unit_name), unit_power))
 
+    # A target token with a declared slot, such as ``mM`` in ``mM*min``, carries
+    # the label itself; without this the label lands on a root unit, as in
+    # ``millimolar * minute * mole[X] / mole``. Single-dimension tokens win.
+    for unit_name in target_units:
+        slot = registry._designation_slot_for(registry.Unit(str(unit_name)))
+        if slot is not None:
+            candidates.setdefault(slot[0], (str(unit_name), slot[1]))
+
     for factor in source_factors:
         if factor.designation is None:
             continue

@@ -678,3 +678,34 @@ def test_plain_slot_targets_adopt_designation_through_their_slot(target: Any) ->
     assert converted == source
     assert converted.units == ureg.Unit(target).with_designation("O2")
     assert "mole[O2] / mole" not in str(converted)
+
+
+@pytest.mark.parametrize(
+    ("source", "target", "expected"),
+    [
+        ("mmol[X]/(L/min)", "mM*min", "millimolar[X] * minute"),
+        ("mmol[X]*min/L", "mM*min", "millimolar[X] * minute"),
+        ("mmol[X]*s/L", "uM*s", "micromolar[X] * second"),
+        ("mmol[X]", "mM*L", "liter * millimolar[X]"),
+    ],
+)
+def test_compound_plain_targets_adopt_designation_through_a_slot_token(
+    source: str, target: str, expected: str
+) -> None:
+    quantity = ureg.Quantity(np.array([1.0, 2.0]), source)
+
+    converted = quantity.to(target)
+
+    assert str(converted.units) == expected
+    assert converted.units == ureg.Unit(expected)
+    assert converted.designation_signature == quantity.designation_signature
+    assert converted.shape == quantity.shape
+    assert np.all(converted == quantity)
+
+
+def test_single_dimension_target_token_takes_the_label_before_a_slot_token() -> None:
+    quantity = ureg.Quantity(1, "mmol[X]/L")
+    converted = quantity.to("mol * mM / mmol")
+
+    assert str(converted.units) == "millimolar * mole[X] / millimole"
+    assert converted == quantity

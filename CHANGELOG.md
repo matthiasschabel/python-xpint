@@ -4,6 +4,13 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- A compound plain conversion target now carries an adopted designation on a
+  token with a designation slot: `Quantity(1, "mmol[X]/(L/min)").to("mM*min")`
+  reads `millimolar[X] * minute` rather than
+  `millimolar * minute * mole[X] / mole`. Values were already correct.
+
 ## [0.1.0b4] - 2026-10-20
 
 ### Added
