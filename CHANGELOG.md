@@ -13,6 +13,17 @@ All notable public changes to xpint are documented here.
 
 ### Fixed
 
+- `to_compact(unit)` checks an explicit target like `to()`: a mismatched
+  designation such as `Quantity(5, "mM[Fe]").to_compact("mM[Gd]")` raises
+  `TypeError` instead of silently keeping `Fe`, and a plain source no longer
+  drops a requested designation.
+- Repeated identical designated factors cancel before Pint's compound-offset
+  rule applies, so `Unit("m[x]/m[x]*degC")` is absolute Celsius under
+  `default_as_delta=True`, as `Unit("m/m*degC")` is, rather than delta Celsius.
+- Plain-target conversions keep a custom slot's designation power: with
+  `define_designation_slot("meter", "[length]", exponent=2)`,
+  `Quantity(1, "cm[x]*s").to("m*s")` formats as text that parses back to the
+  same designation signature.
 - A compound plain conversion target now carries an adopted designation on a
   token with a designation slot: `Quantity(1, "mmol[X]/(L/min)").to("mM*min")`
   reads `millimolar[X] * minute` rather than

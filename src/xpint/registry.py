@@ -1222,6 +1222,24 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         return super().to_timedelta()
 
     @override
+    def to_compact(self, unit: Any = None) -> SemanticQuantity:
+        """Rescale to a compact SI prefix, retaining kind and designations.
+
+        An explicit ``unit`` is checked like a ``to()`` target first: Pint reduces
+        it to physical units before converting, which would otherwise let a
+        plain target adopt the source's designations even when ``unit`` names
+        different ones.
+
+        Raises:
+            DimensionalityError: If ``unit`` has different physical dimensions.
+            TypeError: If ``unit``'s designations or affine role conflict with
+                the value's.
+        """
+        if unit is not None:
+            self._conversion_target(unit)
+        return cast(SemanticQuantity, super().to_compact(unit))
+
+    @override
     def to_base_units(self) -> SemanticQuantity:
         result = cast(SemanticQuantity, super().to_base_units())
         result._kind = self._converted_kind()
@@ -2804,14 +2822,17 @@ class SemanticRegistry(pint.registry.GenericUnitRegistry[SemanticQuantity, Seman
         unit_name, exponent = next(iter(unit._units.items()))
         if exponent == 0:
             return None
-        slot = self._designation_slots.get(str(unit_name))
+        return self._designation_slot_for_name(str(unit_name))
+
+    def _designation_slot_for_name(self, unit_name: str) -> tuple[str, Fraction] | None:
+        slot = self._designation_slots.get(unit_name)
         if slot is None:
             # A prefix scales a unit without changing its dimensions, so a slot declared
             # on ``molar`` also serves ``micromolar`` and ``nanomolar``. An exact-name
             # declaration above takes precedence over the base unit's.
             slots = {
                 self._designation_slots[base]
-                for prefix, base, _suffix in self.parse_unit_name(str(unit_name))
+                for prefix, base, _suffix in self.parse_unit_name(unit_name)
                 if prefix and base in self._designation_slots
             }
             if len(slots) != 1:

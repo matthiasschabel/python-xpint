@@ -63,6 +63,7 @@ def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str
         prefix += "x"
     lifted: list[str] = []
     designations: dict[str, tuple[str, str, int]] = {}
+    placeholders: dict[tuple[str, str], str] = {}
     position = 0
 
     def invalid(message: str, at: int) -> ValueError:
@@ -106,8 +107,14 @@ def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str
         if not label:
             raise invalid("designation must not be empty", opening)
         position += 1
-        placeholder = prefix + "x" * len(designations)
-        designations[placeholder] = (text, "".join(label), opening)
+        # Identical token/label pairs share a placeholder so they cancel inside
+        # Pint's parser, as repeated plain names do, before compound-offset rules
+        # see the factor count: "m[x]/m[x]*degC" must stay absolute Celsius.
+        key = (text, "".join(label))
+        placeholder = placeholders.get(key, prefix + "x" * len(designations))
+        if key not in placeholders:
+            placeholders[key] = placeholder
+            designations[placeholder] = (text, key[1], opening)
         words.append((text, token.start(), input_string[token.start() : position]))
         # Separators prevent a following token from joining the placeholder.
         lifted.append(f"({placeholder})")
@@ -292,6 +299,11 @@ def _single_dimension_factor(registry: Any, unit_name: str) -> tuple[str, Fracti
     if len(dimensionality) != 1:
         return None
     dimension, exponent = next(iter(dimensionality.items()))
+    # A declared slot fixes the designation power, which may differ from the
+    # physical exponent; text parsing applies the slot, so adoption must too.
+    slot: tuple[str, Fraction] | None = registry._designation_slot_for_name(unit_name)
+    if slot is not None and slot[0] == str(dimension):
+        return slot
     return str(dimension), _as_fraction(exponent)
 
 
@@ -318,7 +330,7 @@ def canonical_factors(
     # the label itself; without this the label lands on a root unit, as in
     # ``millimolar * minute * mole[X] / mole``. Single-dimension tokens win.
     for unit_name in target_units:
-        slot = registry._designation_slot_for(registry.Unit(str(unit_name)))
+        slot = registry._designation_slot_for_name(str(unit_name))
         if slot is not None:
             candidates.setdefault(slot[0], (str(unit_name), slot[1]))
 

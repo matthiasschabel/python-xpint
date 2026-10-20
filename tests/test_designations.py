@@ -208,6 +208,30 @@ def test_prefixed_molar_units_inherit_substance_designation_slot(
     assert converted.magnitude == pytest.approx(expected, rel=1e-15, abs=0.0)
 
 
+@pytest.mark.parametrize(
+    ("slot_unit", "source", "target"),
+    [
+        ("meter", "cm[x]*s", "m*s"),
+        ("meter", "m[x]", "cm"),
+        ("meter", "cm[x]**2/s", "m**2/s"),
+        ("centimeter", "cm[x]*s", "cm*s"),
+    ],
+)
+def test_adopted_designation_keeps_a_custom_slot_power_through_text(
+    slot_unit: str, source: str, target: str
+) -> None:
+    registry = SemanticRegistry()
+    registry.define_designation_slot(slot_unit, "[length]", exponent=2)
+    quantity = registry.Quantity(1, source)
+
+    converted = quantity.to(target)
+    reparsed = registry.Unit(str(converted.units))
+
+    assert converted == quantity
+    assert converted.designation_signature == quantity.designation_signature
+    assert reparsed == converted.units
+
+
 def test_exact_designation_slot_takes_precedence_over_base_unit_slot() -> None:
     registry = SemanticRegistry()
     registry.define_designation_slot("kilometer", "[length]", exponent=2)
@@ -641,6 +665,31 @@ def test_plain_conversion_targets_adopt_designations(target: Any) -> None:
     oxygen.ito(target)
     assert oxygen == converted
     assert oxygen.designation_signature == converted.designation_signature
+
+
+@pytest.mark.parametrize("target", ["mM[Fe]", "M[Fe]", mM["Fe"], "mM", mM])
+def test_to_compact_accepts_matching_or_plain_targets(target: Any) -> None:
+    compact = (5000 * mM["Fe"]).to_compact(target)
+    assert compact.designation_signature == mM["Fe"].designation_signature
+    assert compact.to(mM["Fe"]).magnitude == pytest.approx(5000, rel=1e-15, abs=0.0)
+
+
+@pytest.mark.parametrize(
+    ("source", "target", "error"),
+    [
+        (5 * mM["Fe"], "mM[Gd]", TypeError),
+        (5 * mM["Fe"], mM["Gd"], TypeError),
+        (5 * mM, "mM[Gd]", TypeError),
+        (5 * mM["Fe"], "s", pint.DimensionalityError),
+    ],
+)
+def test_to_compact_checks_an_explicit_target_like_to(
+    source: SemanticQuantity, target: Any, error: type[Exception]
+) -> None:
+    with pytest.raises(error):
+        source.to_compact(target)
+    with pytest.raises(error):
+        source.to(target)
 
 
 def test_designations_survive_compact_and_preferred_conversions() -> None:

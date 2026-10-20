@@ -204,6 +204,31 @@ def test_designated_parsing_follows_registry_default_as_delta() -> None:
     assert ureg.Unit("m[a]*degC")._units == ureg.Unit("m*degC")._units
 
 
+@pytest.mark.parametrize("default_as_delta", [False, True])
+@pytest.mark.parametrize("text", ["m[x]/m[x]*degC", "m[x]*degC/m[x]", "mM[Fe]**2/mM[Fe]**2*degC"])
+def test_cancelled_designated_factors_keep_offset_units_absolute(
+    default_as_delta: bool, text: str
+) -> None:
+    registry = SemanticRegistry(default_as_delta=default_as_delta)
+    assert registry.Unit("m/m*degC") == registry.degC
+    assert registry.Unit(text) == registry.degC
+    assert registry.Quantity(20, text) == registry.Quantity(20, "degC")
+
+
+def test_repeated_designated_factors_parse_like_repeated_plain_names() -> None:
+    assert ureg.Unit("m[x]*m[x]") == m["x"] ** 2
+    assert ureg.Unit("m[x]**2/m[x]") == m["x"]
+    assert ureg.Unit("m[x]/m[y]*degC") == m["x"] / m["y"] * ureg.delta_degC
+
+
+@pytest.mark.parametrize("target", ["mM[Fe]", "mol[Fe]/L", ureg.mM["Fe"]])
+def test_designated_string_compatibility_follows_conversion_targets(target: Any) -> None:
+    quantity = ureg.Quantity(5, "mM[Fe]")
+    assert quantity.is_compatible_with(target)
+    assert not quantity.is_compatible_with("mM[Gd]")
+    assert not ureg.Quantity(5, "mM").is_compatible_with("mM[Fe]")
+
+
 def test_plain_source_refuses_designated_string_target() -> None:
     with pytest.raises(TypeError, match="different factor designations"):
         ureg.Quantity(5, "mM").to("mM[Fe]")
