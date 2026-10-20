@@ -4,6 +4,13 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Word-form powers on a designated unit, such as `"m[cap] squared"` or
+  `"square m[cap]"`, raise `ValueError` naming the operator form (`m[cap]**2`)
+  and its position, instead of Pint's `UndefinedUnitError` for `'squared'`.
+  Word forms on undesignated tokens still follow Pint.
+
 ### Fixed
 
 - A compound plain conversion target now carries an adopted designation on a

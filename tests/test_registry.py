@@ -154,6 +154,11 @@ def test_designated_conversion_dimension_mismatch_is_dimensionality_error(
         ("J[Fe]", 1, "physical dimensions and no declared designation slot"),
         ("dimensionless[Fe]", 13, "requires one unit factor"),
         ("undefined_unit[Fe]", 14, "not defined in the unit registry"),
+        ("m[cap] squared", 7, "'squared' is not supported on a designated unit; write m[cap]**2"),
+        ("m[cap]  cubed / s", 8, "'cubed' is not supported on a designated unit; write m[cap]**3"),
+        ("square m[cap]", 0, "'square' is not supported on a designated unit; write m[cap]**2"),
+        ("sq m[a\\]b]", 0, "'sq' is not supported on a designated unit; write m[a\\]b]**2"),
+        ("cubic m[cap]*s", 0, "'cubic' is not supported on a designated unit; write m[cap]**3"),
     ],
 )
 def test_designated_string_errors(entry: str, text: str, position: int, message: str) -> None:
@@ -165,6 +170,20 @@ def test_designated_string_errors(entry: str, text: str, position: int, message:
     assert f"position {position}" in str(error.value)
     assert ". at position" not in str(error.value)
     assert repr(text) in str(error.value)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("m[squared]", m["squared"]),
+        ("m[x] * s squared", m["x"] * s**2),
+        ("square m * s[x]", m**2 * s["x"]),
+    ],
+)
+def test_word_form_powers_away_from_a_designated_unit_follow_pint(
+    text: str, expected: SemanticUnit
+) -> None:
+    assert ureg.Unit(text) == expected
 
 
 def test_designated_unit_string_rejects_scaling() -> None:

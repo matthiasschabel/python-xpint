@@ -48,6 +48,12 @@ _DESIGNATION_TOKEN = re.compile(
 )
 
 
+# Pint's preprocessor rewrites these words around a bare name only (``meter squared``);
+# a lifted label is parenthesized, so they would reach the registry as unknown units.
+_WORD_POWERS_AFTER = {"squared": 2, "cubed": 3}
+_WORD_POWERS_BEFORE = {"square": 2, "sq": 2, "cubic": 3}
+
+
 def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str, int]]]:
     """Protect opaque labels before Pint's preprocessors and tokenizer see them."""
     # Use alphabetic placeholders: Pint rewrites digits adjacent to names. Never
@@ -62,6 +68,9 @@ def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str
     def invalid(message: str, at: int) -> ValueError:
         return ValueError(f"{message} at position {at} in {input_string!r}")
 
+    # Non-space tokens as (text, start, designated source text or None).
+    words: list[tuple[str, int, str | None]] = []
+
     while position < len(input_string):
         token = _DESIGNATION_TOKEN.match(input_string, position)
         assert token is not None
@@ -73,6 +82,8 @@ def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str
             )
         if token.lastgroup != "unit" or input_string[position : position + 1] != "[":
             lifted.append(text)
+            if not text.isspace():
+                words.append((text, token.start(), None))
             continue
         opening = position
         position += 1
@@ -97,8 +108,24 @@ def _lift_designations(input_string: str) -> tuple[str, dict[str, tuple[str, str
         position += 1
         placeholder = prefix + "x" * len(designations)
         designations[placeholder] = (text, "".join(label), opening)
+        words.append((text, token.start(), input_string[token.start() : position]))
         # Separators prevent a following token from joining the placeholder.
         lifted.append(f"({placeholder})")
+
+    for index, (_, _, designated) in enumerate(words):
+        if designated is None:
+            continue
+        neighbours = (
+            (words[index + 1] if index + 1 < len(words) else None, _WORD_POWERS_AFTER),
+            (words[index - 1] if index else None, _WORD_POWERS_BEFORE),
+        )
+        for neighbour, powers in neighbours:
+            if neighbour is not None and neighbour[0] in powers:
+                raise invalid(
+                    f"word-form power {neighbour[0]!r} is not supported on a designated "
+                    f"unit; write {designated}**{powers[neighbour[0]]}",
+                    neighbour[1],
+                )
     return "".join(lifted), designations
 
 
