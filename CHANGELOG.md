@@ -4,6 +4,8 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+## [0.1.0b5] - 2026-10-20
+
 ### Changed
 
 - Word-form powers on a designated unit, such as `"m[cap] squared"` or

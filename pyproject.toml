@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "xpint"
-version = "0.1.0b4"
+version = "0.1.0b5"
 description = "xpint extends Pint with quantity kinds and unit designations: semantic information that keeps energy distinct from torque and mL[blood]/mL[tissue] distinct from a plain ratio."
 readme = "README.md"
 requires-python = ">=3.12"

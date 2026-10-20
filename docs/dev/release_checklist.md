@@ -1,8 +1,8 @@
 # Release checklist
 
 **Status:** Active
-**Last updated:** 2026-10-19
-**Scope:** Publishing xpint releases to PyPI; currently 0.1.0b4.
+**Last updated:** 2026-10-20
+**Scope:** Publishing xpint releases to PyPI; currently 0.1.0b5.
 
 ## Context
 
@@ -24,7 +24,7 @@ until its evidence exists; record release results in [validation](validation.md)
   "unpublished" wording; the CHANGELOG date is the intended upload date. Changing
   it later means a new commit and repeated validation.
 - [ ] **I** Version agreement: `pyproject.toml`, `xpint.__version__`, the
-  CHANGELOG heading, and the planned tag all name 0.1.0b4 / `v0.1.0b4`.
+  CHANGELOG heading, and the planned tag all name 0.1.0b5 / `v0.1.0b5`.
 - [ ] **I** Local installed-artifact validation on 3.12, 3.13, and 3.14 (commands
   below), recorded in validation.
 - [ ] **M+I** Publication review of the public tree before visibility changes:
@@ -43,18 +43,18 @@ until its evidence exists; record release results in [validation](validation.md)
 
 ### Tag, build, and upload
 
-- [ ] **M** Push annotated tag `v0.1.0b4` on the green commit, then dispatch
-  `gh workflow run publish.yml --ref v0.1.0b4`. The build and verify jobs pass and
+- [ ] **M** Push annotated tag `v0.1.0b5` on the green commit, then dispatch
+  `gh workflow run publish.yml --ref v0.1.0b5`. The build and verify jobs pass and
   the run waits for `pypi` approval.
 - [ ] **M+I** Review the run's artifacts before approving: exactly
-  `xpint-0.1.0b4-py3-none-any.whl` and `xpint-0.1.0b4.tar.gz`, SHA-256 values
+  `xpint-0.1.0b5-py3-none-any.whl` and `xpint-0.1.0b5.tar.gz`, SHA-256 values
   matching the build log, wheel holding `xpint/`, `py.typed`, and the license,
   sdist adding examples and CHANGELOG, neither holding tests or docs.
   ```bash
   gh run download <run-id> -n dist -D <new-empty-dir>
   shasum -a 256 <new-empty-dir>/*
-  python -m zipfile -l <new-empty-dir>/xpint-0.1.0b4-py3-none-any.whl
-  tar -tzf <new-empty-dir>/xpint-0.1.0b4.tar.gz
+  python -m zipfile -l <new-empty-dir>/xpint-0.1.0b5-py3-none-any.whl
+  tar -tzf <new-empty-dir>/xpint-0.1.0b5.tar.gz
   ```
 - [ ] **M** Approve the `pypi` deployment, naming the run and both hashes.
 
@@ -62,13 +62,13 @@ until its evidence exists; record release results in [validation](validation.md)
 
 - [ ] **I** PyPI holds the approved bytes:
   ```bash
-  curl -s https://pypi.org/pypi/xpint/0.1.0b4/json | python3 -c 'import json,sys
+  curl -s https://pypi.org/pypi/xpint/0.1.0b5/json | python3 -c 'import json,sys
   for u in json.load(sys.stdin)["urls"]: print(u["digests"]["sha256"], u["filename"])'
   ```
 - [ ] **I** Fresh install from PyPI per supported Python, outside any checkout,
   with no cache and no optional packages, then `tools/check_minimal_install.py`.
 - [ ] **M** The PyPI page renders the README and its links work logged out.
-- [ ] **M** Optional GitHub pre-release on `v0.1.0b4` with the CHANGELOG notes.
+- [ ] **M** Optional GitHub pre-release on `v0.1.0b5` with the CHANGELOG notes.
 - [ ] **I** Record results in validation and reset this checklist for the next
   release.
 
