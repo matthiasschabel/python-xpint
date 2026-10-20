@@ -34,7 +34,7 @@ Keep `pint>=0.25.3,<0.26` until a new compatibility matrix supports expansion.
 | Other affine domains | Strict policy is thermodynamic-temperature only | Separate design for gauge pressure or other origins; do not infer it from temperature rules |
 | Angle configuration | Stock definitions at construction; no supported custom contexts or runtime mode toggle | Consistent cache, catalog, conversion, and definition-compatibility model |
 
-Native designated token strings are implemented in the unreleased version;
+Native designated token strings shipped in 0.1.0b4;
 universal exponent round-trip identity remains blocked as noted above. The
 grammar, Pint extension boundary, and cache isolation are recorded in
 [architecture](../architecture.md#native-designated-strings).

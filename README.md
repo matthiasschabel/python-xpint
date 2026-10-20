@@ -129,7 +129,7 @@ unit, such as the substance in `mmol["O2"] / L`:
   because the registry declares that molar concentration designates its
   substance; otherwise write the factor form, `mmol["O2"] / L`.
 
-Designations also work in unit strings (added in the unreleased version):
+Designations also work in unit strings (since 0.1.0b4):
 
 ```python
 ureg.Unit("mM[Fe]") == mM["Fe"]
@@ -320,7 +320,7 @@ array partly updated. The staging covers NumPy arrays only. Classified quantitie
   computation, and multiplication by xpint units are tested.
 - pint-xarray: ordinary units and designated DataArray unit strings round-trip
   through quantify/dequantify with `SemanticRegistry(force_ndarray_like=True)`
-  (designated strings require the unreleased version). Use default or `"~"`
+  (designated strings require 0.1.0b4 or later). Use default or `"~"`
   formatting; this does not serialize quantity kinds.
 - pandas and arbitrary Dask graph transformations are not supported.
 

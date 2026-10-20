@@ -129,7 +129,7 @@ not silently resolved by this consolidation.
 
 #### Native designated strings
 
-The unreleased parser accepts `registered-token[label]` before a token's power.
+The parser accepts `registered-token[label]` before a token's power.
 The bracket must immediately follow the token; groups and numbers cannot receive
 labels. Labels are opaque and case-sensitive, with only `\\`, `\[`, and `\]`
 escapes. Empty labels, unescaped nested brackets, bad escapes, and misplaced or
