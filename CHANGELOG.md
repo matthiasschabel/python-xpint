@@ -24,6 +24,16 @@ All notable public changes to xpint are documented here.
   A slot declared on a prefixed unit applies to that unit only and takes
   precedence over its base unit's.
 
+### Changed
+
+- A designation-mismatch conversion error now names the source and target
+  units, as in `cannot convert millimolar[Fe] to millimolar[Gd]: ...`.
+- Converting to a target with different physical dimensions raises Pint's
+  `DimensionalityError` even when the target or the value carries
+  designations; previously `Quantity(1, "s").to("mM[Gd]")` reported a
+  designation mismatch. This also applies to `m_as()` with a plain target.
+  `DimensionalityError` subclasses `TypeError`, so existing handlers still catch it.
+
 ### Fixed
 
 - Registry expressions such as `"5 mM[s]"` and `"5 m[g]"` now treat `s` and `g`

@@ -6,6 +6,7 @@ from fractions import Fraction
 from typing import Any, cast
 
 import numpy as np
+import pint
 import pytest
 
 from xpint import DesignationTerm, SemanticQuantity, SemanticRegistry
@@ -584,10 +585,19 @@ def test_designated_formatting_rejects_unsupported_unit_specs(spec: str, quantit
         format(value, spec)
 
 
-@pytest.mark.parametrize("target", ["mol/L", ureg.mole / L, None])
+@pytest.mark.parametrize("target", ["mol/L", ureg.mole / L])
 def test_m_as_rejects_a_target_without_the_value_designations(target: Any) -> None:
     oxygen = 5 * mmol["O2"] / L
     with pytest.raises(TypeError, match=r"m_as\(\) needs a target that carries the designations"):
+        oxygen.m_as(target)
+
+
+@pytest.mark.parametrize("target", [None, "s", ureg.second])
+def test_m_as_reports_a_plain_target_of_other_dimensions_as_dimensionality_error(
+    target: Any,
+) -> None:
+    oxygen = 5 * mmol["O2"] / L
+    with pytest.raises(pint.DimensionalityError):
         oxygen.m_as(target)
 
 
@@ -597,6 +607,8 @@ def test_m_as_rejects_mismatched_designations_after_cancellation() -> None:
     with pytest.raises(TypeError, match="needs a target that carries the designations"):
         rate.m_as(1 / s)
     with pytest.raises(TypeError, match="same designation signature"):
+        rate.m_as(mM["Fe"] / (mM["gadoteridol"] * s))
+    with pytest.raises(pint.DimensionalityError):
         rate.m_as(1 / (mM["gadoteridol"] * s))
 
 

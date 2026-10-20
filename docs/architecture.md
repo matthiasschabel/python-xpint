@@ -117,7 +117,8 @@ since a prefix changes scale and not dimensions; the built-in catalogue declares
 only `molar`. An exact-name slot wins over the base unit's.
 
 Conversion to a plain unit target preserves source designations, while an
-explicitly designated target must match. `as_undesignated()` is the explicit
+explicitly designated target must match. A target with different physical
+dimensions raises Pint's `DimensionalityError` before any designation check. `as_undesignated()` is the explicit
 removal operation. Unit reduction reconciles physical scale with retained factor
 identity, so `1 m[a] / (1 cm[b])` becomes `100 m[a] / m[b]`.
 

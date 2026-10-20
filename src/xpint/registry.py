@@ -1073,9 +1073,18 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         if not target_units.has_designation and self.has_designation:
             target_units = self._adopt_designations(target_units)
         if self.designation_signature != target_units.designation_signature:
+            # A physical mismatch is the more fundamental error, so report it as Pint
+            # would rather than as a designation mismatch the caller cannot fix alone.
+            if self.dimensionality != target_units.dimensionality:
+                raise DimensionalityError(
+                    self.units,
+                    target_units,
+                    str(self.dimensionality),
+                    str(target_units.dimensionality),
+                )
             raise TypeError(
-                "cannot convert between different factor designations; "
-                "the target unit must carry the same designation signature."
+                f"cannot convert {self.units!s} to {target_units!s}: different factor "
+                "designations; the target unit must carry the same designation signature."
             )
         target_role = registry._affine_role(target_units, self._kind)
         source_role = self.affine_role
@@ -1124,6 +1133,8 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         Pint controls numeric scaling and dtype changes.
 
         Raises:
+            DimensionalityError: If the target has different physical dimensions,
+                including a designated target.
             TypeError: If designation or affine roles conflict, or a context
                 changes a kinded value's dimensions; call ``as_unkinded()`` first.
         """
@@ -1148,6 +1159,8 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         retain Pint's own mutation behavior. Plain targets adopt source designations.
 
         Raises:
+            DimensionalityError: If the target has different physical dimensions,
+                including a designated target.
             TypeError: If designation or affine roles conflict, or a context
                 changes a kinded value's dimensions; call ``as_unkinded()`` first.
         """
@@ -1173,10 +1186,16 @@ class SemanticQuantity(pint.UnitRegistry.Quantity[Any]):
         as in Pint. Kinds are dropped with the units, as ``.magnitude`` drops them.
 
         Raises:
+            DimensionalityError: If the target has different physical dimensions.
             TypeError: If the value carries designations and the target names none, or
                 the target's designations or affine role conflict with the value's.
         """
-        if self.has_designation and not self._requested_target(units).has_designation:
+        target = self._requested_target(units)
+        if (
+            self.has_designation
+            and not target.has_designation
+            and self.dimensionality == target.dimensionality
+        ):
             raise TypeError(
                 f"m_as() needs a target that carries the designations of {self.units}; "
                 "a plain target would extract a number without checking them. Pass a unit "

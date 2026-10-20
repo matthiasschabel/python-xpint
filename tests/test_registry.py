@@ -105,13 +105,31 @@ def test_designated_string_conversion_targets() -> None:
 @pytest.mark.parametrize("operation", ["to", "m_as", "constructor", "convert"])
 def test_designated_string_conversion_mismatch(operation: str) -> None:
     quantity = ureg.Quantity(1, "mM[Fe]")
-    with pytest.raises(TypeError, match="different factor designations"):
+    message = re.escape("cannot convert millimolar[Fe] to millimolar[Gd]: different factor")
+    with pytest.raises(TypeError, match=message):
         if operation == "constructor":
             ureg.Quantity(quantity, "mM[Gd]")
         elif operation == "convert":
             ureg.convert(1, "mM[Fe]", "mM[Gd]")
         else:
             getattr(quantity, operation)("mM[Gd]")
+
+
+@pytest.mark.parametrize(
+    ("source", "target"),
+    [("s", "mM[Gd]"), ("mM[Gd]", "s"), ("mM[Gd]", "s[Gd]"), ("mM[Fe]", "mol[Fe]")],
+)
+@pytest.mark.parametrize("operation", ["to", "ito", "m_as", "convert"])
+def test_designated_conversion_dimension_mismatch_is_dimensionality_error(
+    source: str, target: str, operation: str
+) -> None:
+    quantity = ureg.Quantity(np.array([1.0]), source)
+    with pytest.raises(pint.DimensionalityError):
+        if operation == "convert":
+            ureg.convert(1, source, target)
+        else:
+            getattr(quantity, operation)(target)
+    assert quantity.units == ureg.Unit(source)
 
 
 @pytest.mark.parametrize("entry", ["Unit", "Quantity", "parse_units", "parse_expression"])
