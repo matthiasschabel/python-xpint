@@ -4,6 +4,8 @@ All notable public changes to xpint are documented here.
 
 ## [Unreleased]
 
+## [0.1.0b4] - 2026-10-20
+
 ### Added
 
 - Native designated unit strings, including `"mM[Fe]"`, `"mmol[O2]/L"`, and

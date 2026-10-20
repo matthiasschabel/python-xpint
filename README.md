@@ -4,7 +4,7 @@ xpint extends [Pint](https://pint.readthedocs.io/) with quantity kinds and unit
 designations: semantic information that keeps energy distinct from torque and
 mL[blood]/mL[tissue] distinct from a plain ratio.
 
-> **Status:** 0.1.0b3 is a public beta. The API and the supported
+> **Status:** 0.1.0b4 is a public beta. The API and the supported
 > interoperability surface may change during beta.
 
 Pint checks physical dimensions. Many mistakes pass that check: energy and
@@ -26,7 +26,7 @@ does not change Pint's application registry.
 ## Installation
 
 ```bash
-python -m pip install "xpint==0.1.0b3"
+python -m pip install "xpint==0.1.0b4"
 ```
 
 xpint requires Python 3.12 or later and Pint `>=0.25.3,<0.26`. The Pint range is
